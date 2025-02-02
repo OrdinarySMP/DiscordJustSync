@@ -72,7 +72,7 @@ public class ConsoleBridge extends ListenerAdapter {
             }
         }
         target.sendMessage(this.integration.getConfig().messages.commandExecutedInfoText.replace("%user%",
-            Utils.escapeUnderscores(source.getName())).replace("%cmd%", command)).queue();
+            Utils.escapeUnderscores(source.getName())).replace("%cmd%", Utils.escapeCodeChars(command))).queue();
     }
 
     @Override
