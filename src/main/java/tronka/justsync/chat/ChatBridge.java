@@ -186,7 +186,7 @@ public class ChatBridge extends ListenerAdapter {
     private void onMcChatMessage(SignedMessage signedMessage, ServerPlayerEntity player,
         MessageType.Parameters parameters) {
         String message = signedMessage.getContent().getString();
-        if (this.integration.getConfig().formatWaypoints) {
+        if (this.integration.getConfig().waypoints.formatWaypoints) {
             message = Utils.formatXaero(message, this.integration.getConfig());
             message = Utils.formatVoxel(message, this.integration.getConfig(), player);
         }
