@@ -226,8 +226,8 @@ public class Utils {
             String name, String abbr, String dim,
             String x, String y, String z, Config config) {
         String returnMessage = config.messages.waypointFormat;
-        if (!config.waypointURL.isEmpty() && dim.equals("Overworld")) {
-            name = String.format("[%s](<%s>)", name, config.waypointURL);
+        if (!config.waypoints.mapURLs.getOrDefault(dim, "").isEmpty()) {
+            name = String.format("[%s](<%s>)", name, config.waypoints.mapURLs.get(dim));
         }
         return returnMessage.replace("%name%", name)
                     .replace("%abbr%", abbr)

@@ -2,12 +2,14 @@ package tronka.justsync.config;
 
 import com.moandjiezana.toml.Toml;
 import com.moandjiezana.toml.TomlComment;
+import com.moandjiezana.toml.TomlIgnore;
 import com.moandjiezana.toml.TomlWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import tronka.justsync.JustSyncApplication;
@@ -29,13 +31,11 @@ public class Config {
     @TomlComment("After how many seconds of no messages, a new message should be sent")
     public int stackMessagesTimeoutInSec = 60;
 
-    @TomlComment("Format shared waypoints")
+    @Deprecated
+    @TomlIgnore
     public boolean formatWaypoints = true;
-    @TomlComment({"Base URL of online map (this will add a hyperlink for overworld waypoints)",
-                    "keep empty if none, example formatting:",
-                    "https://map.example.com/#world:%x%:%y%:%z%:500:0:0:0:0:perspective",
-                    "Placeholders: ",
-                    "%x%, %y%, %z%: coordinates"})
+    @Deprecated
+    @TomlIgnore
     public String waypointURL = "";
 
     @TomlComment("Send death messages to discord")
@@ -46,12 +46,17 @@ public class Config {
     @TomlComment("Show the online player count as the bots status")
     public boolean showPlayerCountStatus = true;
 
+    @TomlComment("Version of the Config file, do not touch!")
+    public int configVersion = 1;
+
     public MessageStrings messages = new MessageStrings();
     public LinkingOptions linking = new LinkingOptions();
     public DiscordLinkResults linkResults = new DiscordLinkResults();
     public ErrorStrings kickMessages = new ErrorStrings();
     public CommandSettings commands = new CommandSettings();
     public ExternalIntegrations integrations = new ExternalIntegrations();
+    public WaypointIntegration waypoints = new WaypointIntegration();
+
 
     public static Config loadConfig() {
         Path configDir = JustSyncApplication.getConfigFolder();
@@ -62,12 +67,22 @@ public class Config {
         } else {
             instance = new Config();
         }
+        upgradeConfig(instance);
         try {
             Files.createDirectories(configDir);
             new TomlWriter().write(instance, configFile);
         } catch (IOException ignored) {
         }
         return instance;
+    }
+
+    private static void upgradeConfig(Config config) {
+        if (!config.formatWaypoints) {
+            config.waypoints.formatWaypoints = false;
+        }
+        if (config.waypointURL != null && !config.waypointURL.isEmpty()) {
+            config.waypoints.mapURLs.put("Overworld", config.waypointURL);
+        }
     }
 
     public static class LinkingOptions {
@@ -259,6 +274,17 @@ public class Config {
             obj.inGameAction = action;
             return obj;
         }
+    }
+
+    public static class WaypointIntegration {
+        @TomlComment("Format shared waypoints")
+        public boolean formatWaypoints = true;
+        @TomlComment({"Base URLs of online map (this will add hyperlinks for waypoints in the specified dimensions)",
+            "keep empty if none, example formatting:",
+            "https://map.example.com/#world:%x%:%y%:%z%:500:0:0:0:0:perspective",
+            "Placeholders: ",
+            "%x%, %y%, %z%: coordinates"})
+        public Map<String, String> mapURLs = new HashMap<>(Map.of("Overworld", "", "Nether", "", "End", ""));
     }
 
 }
