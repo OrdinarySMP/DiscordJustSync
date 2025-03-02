@@ -55,6 +55,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
                 List<String> namesList = this.integration.getServer().getPlayerManager().getPlayerList().stream()
                     .filter(player -> !this.integration.getVanishIntegration().isVanished(player))
                     .map(player -> player.getName().getLiteralString())
+                    .map(Utils::escapeUnderscores)
                     .toList();
 
                 String nameList = String.join(", ", namesList);
