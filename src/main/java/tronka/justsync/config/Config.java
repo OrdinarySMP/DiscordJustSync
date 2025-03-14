@@ -46,6 +46,17 @@ public class Config {
     @TomlComment("Show the online player count as the bots status")
     public boolean showPlayerCountStatus = true;
 
+    @TomlComment({"Disables formatting codes sent from discord",
+        "for reference check the wiki entry: https://minecraft.wiki/w/Formatting_codes"})
+    public boolean restrictFormattingCodes = false;
+
+    @TomlComment("Character to replace '§'. Leave empty to remove formatting code.")
+    public String formattingCodeReplacement = "";
+
+    @TomlComment("Allow certain discord roles to use formatting even when disabled")
+    public List<String> formattingCodeRestrictionOverrideRoles = new ArrayList<>();
+
+
     @TomlComment("Version of the Config file, do not touch!")
     public int configVersion = 1;
 

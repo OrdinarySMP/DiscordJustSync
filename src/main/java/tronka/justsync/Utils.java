@@ -237,6 +237,14 @@ public class Utils {
                     .replaceAll("%z%", z);
     }
 
+    public static String replaceFormattingCode(String str, String replacement) {
+        return str.replace("§", replacement);
+    }
+
+    public static String removeFormattingCode(String str) {
+        return str.replaceAll("§[\\da-fk-or]", "");
+    }
+
 
     private static int parseIntWithDefault(String str, int defaultValue) {
         try {

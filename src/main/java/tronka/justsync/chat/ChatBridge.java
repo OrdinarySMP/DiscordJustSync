@@ -5,6 +5,8 @@ import eu.pb4.placeholders.api.node.TextNode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Webhook;
@@ -96,11 +98,26 @@ public class ChatBridge extends ListenerAdapter {
             attachmentInfo = TextNode.empty();
         }
 
+        String messageText = event.getMessage().getContentDisplay();
+        if (messageText.contains("§") && this.integration.getConfig().restrictFormattingCodes &&
+                event.getMember().getRoles().stream().noneMatch(
+                    Utils.parseRoleList(this.integration.getGuild(),
+                        this.integration.getConfig()
+                        .formattingCodeRestrictionOverrideRoles)::contains)) {
+
+            if (this.integration.getConfig().formattingCodeReplacement.isEmpty()) {
+                messageText = Utils.removeFormattingCode(messageText);
+            } else {
+                messageText = Utils.replaceFormattingCode(
+                    messageText, this.integration.getConfig().formattingCodeReplacement);
+            }
+        }
+
         String replyUser = repliedMessage == null ? "%userRepliedTo%"
             : (repliedMessage.getMember() == null ? repliedMessage.getAuthor().getEffectiveName()
                 : repliedMessage.getMember().getEffectiveName());
         sendMcChatMessage(TextReplacer.create()
-            .replace("msg", Utils.parseUrls(event.getMessage().getContentDisplay(), this.integration.getConfig()))
+            .replace("msg", Utils.parseUrls(messageText, this.integration.getConfig()))
             .replace("user", event.getMember().getEffectiveName()).replace("userRepliedTo", replyUser)
             .replace("attachments", attachmentInfo).apply(baseText));
     }
