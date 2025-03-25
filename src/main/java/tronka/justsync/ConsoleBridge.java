@@ -18,7 +18,8 @@ import tronka.justsync.config.Config;
 public class ConsoleBridge extends ListenerAdapter {
 
     private final JustSyncApplication integration;
-    private TextChannel channel;
+    private TextChannel commandLogChannel;
+    private TextChannel commandChannel;
     private Role opRole;
     private List<LogRedirect> logRedirects;
 
@@ -28,10 +29,11 @@ public class ConsoleBridge extends ListenerAdapter {
     }
 
     private void onConfigLoaded(Config config) {
-        this.channel = Utils.getTextChannel(this.integration.getJda(), config.commands.consoleChannel);
+        this.commandLogChannel = Utils.getTextChannel(this.integration.getJda(), config.commands.commandLogChannel);
+        this.commandChannel = Utils.getTextChannel(this.integration.getJda(), config.commands.commandChannel);
         String opRoleId = this.integration.getConfig().commands.opRole;
-        if (this.channel != null && !opRoleId.isEmpty()) {
-            this.opRole = this.channel.getGuild().getRoleById(opRoleId);
+        if (this.commandChannel != null && !opRoleId.isEmpty()) {
+            this.opRole = this.commandChannel.getGuild().getRoleById(opRoleId);
         } else {
             this.opRole = null;
         }
@@ -49,7 +51,7 @@ public class ConsoleBridge extends ListenerAdapter {
     }
 
     public void onCommandExecute(ServerCommandSource source, String command) {
-        if (this.channel == null) {
+        if (this.commandLogChannel == null) {
             return;
         }
         if (!this.integration.getConfig().commands.logCommandsInConsole) {
@@ -64,7 +66,7 @@ public class ConsoleBridge extends ListenerAdapter {
         if (Utils.startsWithAny(command, this.integration.getConfig().commands.ignoredCommands)) {
             return;
         }
-        TextChannel target = this.channel;
+        TextChannel target = this.commandLogChannel;
         for (LogRedirect redirect : this.logRedirects) {
             if (Utils.startsWithAny(command, redirect.prefixes)) {
                 target = redirect.channel;
@@ -77,7 +79,7 @@ public class ConsoleBridge extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
-        if (event.getChannel() != this.channel || event.getMember() == null) {
+        if (event.getChannel() != this.commandChannel || event.getMember() == null) {
             return;
         }
 
