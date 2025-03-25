@@ -58,7 +58,7 @@ public class Config {
 
 
     @TomlComment("Version of the Config file, do not touch!")
-    public int configVersion = 1;
+    public int configVersion = 2;
 
     public MessageStrings messages = new MessageStrings();
     public LinkingOptions linking = new LinkingOptions();
@@ -88,11 +88,19 @@ public class Config {
     }
 
     private static void upgradeConfig(Config config) {
+        // 0 -> 1
         if (!config.formatWaypoints) {
             config.waypoints.formatWaypoints = false;
         }
         if (config.waypointURL != null && !config.waypointURL.isEmpty()) {
             config.waypoints.mapURLs.put("Overworld", config.waypointURL);
+        }
+
+        // 1 -> 2
+        if (config.configVersion < 2) {
+            config.commands.commandLogChannel = config.commands.consoleChannel;
+            config.commands.commandChannel = config.commands.consoleChannel;
+            config.configVersion = 2;
         }
     }
 
@@ -233,8 +241,14 @@ public class Config {
 
     public static class CommandSettings {
 
-        @TomlComment("A channel to send player run commands to and run specific configured commands from")
+        @Deprecated
+        @TomlIgnore
         public String consoleChannel = "";
+
+        @TomlComment("Channel to log commands into")
+        public String commandLogChannel = "";
+        @TomlComment("Channel to send commands into")
+        public String commandChannel = "";
         @TomlComment("Whether all commands should be logged")
         public boolean logCommandsInConsole = true;
         @TomlComment("Should commands from commands blocks be logged")
