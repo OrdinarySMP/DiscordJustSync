@@ -234,9 +234,7 @@ public class LinkManager extends ListenerAdapter {
         if (data.getPlayerId().equals(uuid)) {
             this.unlinkPlayer(data);
         } else {
-            this.tryKickPlayer(uuid, this.integration.getConfig().kickMessages.kickUnlinked);
-            this.integration.getDiscordLogger().onUnlinkAlt(uuid);
-            data.removeAlt(uuid);
+            this.unlinkAlt(data, uuid);
         }
         return true;
     }
@@ -245,6 +243,7 @@ public class LinkManager extends ListenerAdapter {
         this.tryKickPlayer(link.getPlayerId(), this.integration.getConfig().kickMessages.kickUnlinked);
         for (PlayerData alt : link.getAlts()) {
             this.tryKickPlayer(alt.getId(), this.integration.getConfig().kickMessages.kickUnlinked);
+            this.integration.getLuckPermsIntegration().unsetAlt(alt.getId());
         }
         this.integration.getDiscordLogger().onUnlink(link);
         this.linkData.removePlayerLink(link);
@@ -275,11 +274,18 @@ public class LinkManager extends ListenerAdapter {
         }
     }
 
-    public void tryKickPlayer(UUID uuid, String reason) {
+    private void tryKickPlayer(UUID uuid, String reason) {
         MinecraftServer server = this.integration.getServer();
         ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
         if (player != null) {
             player.networkHandler.disconnect(Text.of(reason));
         }
+    }
+
+    public void unlinkAlt(PlayerLink link, UUID altUuid) {
+        this.tryKickPlayer(altUuid, this.integration.getConfig().kickMessages.kickUnlinked);
+        link.removeAlt(altUuid);
+        this.integration.getDiscordLogger().onUnlinkAlt(altUuid);
+        this.integration.getLuckPermsIntegration().unsetAlt(altUuid);
     }
 }

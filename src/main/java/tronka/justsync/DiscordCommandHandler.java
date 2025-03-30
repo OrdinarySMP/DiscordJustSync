@@ -6,7 +6,6 @@ import java.util.Objects;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -168,10 +167,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
                 UUID altUuid = data.get().getAlts().stream()
                     .filter((alt) -> alt.getName().equalsIgnoreCase(minecraftName))
                     .findFirst().get().getId();
-                this.integration.getLinkManager()
-                    .tryKickPlayer(altUuid, this.integration.getConfig().kickMessages.kickUnlinked);
-                this.integration.getDiscordLogger().onUnlinkAlt(altUuid);
-                data.get().removeAlt(altUuid);
+                this.integration.getLinkManager().unlinkAlt(data.get(), altUuid);
             }
             hook.editOriginal("Successfully unlinked").queue();
         }
