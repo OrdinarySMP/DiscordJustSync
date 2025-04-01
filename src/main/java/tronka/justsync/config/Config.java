@@ -116,6 +116,9 @@ public class Config {
         public String linkingLogChannel = "";
         @TomlComment("What roles a player must have on discord to join the minecraft server")
         public List<String> requiredRoles = new ArrayList<>();
+        @TomlComment({"Number of roles of requiredRoles to be required",
+            "-1 defaults to all required"})
+        public int requiredRolesCount = -1;
         @TomlComment("What roles should be assigned to a players discord account when they join")
         public List<String> joinRoles = new ArrayList<>();
         @TomlComment("Players discord nickname will be set to their ingame name")
