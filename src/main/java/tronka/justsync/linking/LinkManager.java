@@ -2,6 +2,8 @@ package tronka.justsync.linking;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.logging.LogUtils;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -61,7 +63,12 @@ public class LinkManager extends ListenerAdapter {
         if (!this.integration.getConfig().linking.enableLinking) {
             return true;
         }
-        return Set.copyOf(member.getRoles()).containsAll(this.requiredRoles);
+        List<Role> roles = new ArrayList<>(member.getRoles());
+        if (this.integration.getConfig().linking.requiredRolesCount == -1) {
+            return roles.containsAll(this.requiredRoles);
+        }
+        roles.retainAll(this.requiredRoles);
+        return roles.size() >= this.integration.getConfig().linking.requiredRolesCount;
     }
 
     public boolean isAllowedToJoin(long discordId) {
@@ -85,17 +92,17 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public boolean canJoin(UUID playerId) {
-        if (!this.integration.getConfig().linking.enableLinking) {
-            return true;
-        }
         Optional<Member> member = getDiscordOf(playerId);
         if (member.isEmpty()) {
+            return false;
+        }
+        if (!isAllowedToJoin(member.get())) {
             return false;
         }
         if (this.integration.getConfig().linking.disallowTimeoutMembersToJoin && member.get().isTimedOut()) {
             return false;
         }
-        return Set.copyOf(member.get().getRoles()).containsAll(this.requiredRoles);
+        return true;
     }
 
     public void onPlayerJoin(ServerPlayerEntity player) {
