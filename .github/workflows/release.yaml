@@ -95,7 +95,7 @@ jobs:
           echo "MINECRAFT_VERSION=$minecraft_version" >> $GITHUB_ENV
       - name: Upload to Modrinth
         if: steps.semantic-release.outputs.new_release_version != ''
-        uses: cloudnode-pro/modrinth-publish@2.0.0
+        uses: cloudnode-pro/modrinth-publish@v2
         with:
           token: ${{ secrets.MODRINTH_TOKEN }}
           project: ${{ secrets.MODRINTH_PROJECT_ID }}
