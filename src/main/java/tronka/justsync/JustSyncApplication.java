@@ -20,6 +20,7 @@ import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import tronka.justsync.chat.ChatBridge;
+import tronka.justsync.compat.FloodgateIntegration;
 import tronka.justsync.compat.LuckPermsIntegration;
 import tronka.justsync.compat.VanishIntegration;
 import tronka.justsync.config.Config;
@@ -41,6 +42,7 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
     private LinkManager linkManager;
     private LuckPermsIntegration luckPermsIntegration;
     private VanishIntegration vanishIntegration;
+    private FloodgateIntegration floodgateIntegration;
     private TimeoutManager timeoutManager;
     private DiscordLogger discordLogger;
 
@@ -89,6 +91,7 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
         this.discordLogger = new DiscordLogger(this);
         this.luckPermsIntegration = new LuckPermsIntegration(this);
         this.vanishIntegration = new VanishIntegration(this);
+        this.floodgateIntegration = new FloodgateIntegration(this);
         registerConfigReloadHandler(this::onConfigReloaded);
     }
 
@@ -146,6 +149,8 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
     public VanishIntegration getVanishIntegration() {
         return this.vanishIntegration;
     }
+
+    public FloodgateIntegration getFloodgateIntegration() { return this.floodgateIntegration;}
 
     public TimeoutManager getTimeoutManager() {
         return this.timeoutManager;
