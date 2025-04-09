@@ -81,6 +81,11 @@ public class Utils {
     }
 
     public static String getPlayerName(UUID uuid) {
+        if (JustSyncApplication.getInstance().getFloodgateIntegration().isLoaded()) {
+            if (JustSyncApplication.getInstance().getFloodgateIntegration().isBedrock(uuid)) {
+                return JustSyncApplication.getInstance().getFloodgateIntegration().getUsername(uuid);
+            }
+        }
         ProfileResult result = JustSyncApplication.getInstance().getServer()
             .getSessionService()
             .fetchProfile(uuid, false);

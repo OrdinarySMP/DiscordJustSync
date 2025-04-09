@@ -22,9 +22,11 @@ import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+
 import org.slf4j.Logger;
 import tronka.justsync.JustSyncApplication;
 import tronka.justsync.Utils;
+import tronka.justsync.compat.FloodgateIntegration;
 import tronka.justsync.config.Config;
 
 public class LinkManager extends ListenerAdapter {
@@ -37,7 +39,7 @@ public class LinkManager extends ListenerAdapter {
     private LinkData linkData;
     private List<Role> requiredRoles;
     private List<Role> joinRoles;
-
+    private List<Role> allowMixedAccountTypesBypass;
 
     public LinkManager(JustSyncApplication integration) {
         this.integration = integration;
@@ -46,9 +48,14 @@ public class LinkManager extends ListenerAdapter {
 
     private void onConfigLoaded(Config config) {
         this.linkData = JsonLinkData.from(
-            JustSyncApplication.getConfigFolder().resolve(JustSyncApplication.ModId + ".player-links.json").toFile());
-        this.requiredRoles = Utils.parseRoleList(this.integration.getGuild(), this.integration.getConfig().linking.requiredRoles);
-        this.joinRoles = Utils.parseRoleList(this.integration.getGuild(), this.integration.getConfig().linking.joinRoles);
+                JustSyncApplication.getConfigFolder().resolve(JustSyncApplication.ModId + ".player-links.json")
+                        .toFile());
+        this.requiredRoles = Utils.parseRoleList(this.integration.getGuild(),
+                this.integration.getConfig().linking.requiredRoles);
+        this.joinRoles = Utils.parseRoleList(this.integration.getGuild(),
+                this.integration.getConfig().linking.joinRoles);
+        this.allowMixedAccountTypesBypass = Utils.parseRoleList(this.integration.getGuild(),
+                this.integration.getConfig().integrations.allowMixedAccountTypesBypass);
     }
 
     public Optional<Member> getDiscordOf(UUID playerId) {
@@ -121,7 +128,8 @@ public class LinkManager extends ListenerAdapter {
         }
 
         if (data.getPlayerId().equals(player.getUuid()) && this.integration.getConfig().linking.renameOnJoin
-            && PermissionUtil.checkPermission(this.integration.getGuild().getSelfMember(), Permission.NICKNAME_MANAGE)) {
+                && PermissionUtil.checkPermission(this.integration.getGuild().getSelfMember(),
+                        Permission.NICKNAME_MANAGE)) {
             member.modifyNickname(player.getName().getString()).queue();
         }
         if (PermissionUtil.checkPermission(this.integration.getGuild().getSelfMember(), Permission.MANAGE_ROLES)) {
@@ -152,6 +160,11 @@ public class LinkManager extends ListenerAdapter {
         Optional<PlayerLink> existing = this.linkData.getPlayerLink(discordId);
         if (existing.isPresent()) {
             PlayerLink link = existing.get();
+
+            if (isMixedAlt(link, linkRequest.get())) {
+                return this.integration.getConfig().integrations.mixedAccountTypeDenyMessage;
+            }
+
             if (this.reachedMaxAlts(link)) {
                 return this.integration.getConfig().linkResults.failedTooManyLinked;
             }
@@ -163,6 +176,33 @@ public class LinkManager extends ListenerAdapter {
             this.integration.getDiscordLogger().onLinkMain(linkRequest.get().getPlayerId());
         }
         return this.integration.getConfig().linkResults.linkSuccess.replace("%name%", linkRequest.get().getName());
+    }
+
+    // also returns false if is mixed alt but bypasses or mixed accounts are allowed
+    private boolean isMixedAlt(PlayerLink playerLink, LinkRequest linkRequest) {
+        if (!this.integration.getFloodgateIntegration().isLoaded()) {
+            return false;
+        }
+
+        if (this.integration.getConfig().integrations.allowMixedAccountTypes) {
+            return false;
+        }
+
+        FloodgateIntegration floodgateIntegration = this.integration.getFloodgateIntegration();
+        if (floodgateIntegration.isBedrock(playerLink.getPlayerId())
+                == floodgateIntegration.isBedrock(linkRequest.getPlayerId())) {
+            return false;
+        }
+        Optional<Member> member = this.getDiscordOf(playerLink);
+        List<Role> roles = new ArrayList<>(member.get().getRoles());
+
+        roles.retainAll(this.allowMixedAccountTypesBypass);
+
+        if (roles.size() > 0) {
+            return false;
+        }
+
+        return true;
     }
 
     private boolean reachedMaxAlts(PlayerLink link) {
@@ -199,11 +239,11 @@ public class LinkManager extends ListenerAdapter {
             purgeCodes();
         }
 
-        long expiryTime =
-            System.currentTimeMillis() + this.integration.getConfig().linking.linkCodeExpireMinutes * 60 * 1000;
+        long expiryTime = System.currentTimeMillis()
+                + this.integration.getConfig().linking.linkCodeExpireMinutes * 60 * 1000;
         String code;
         do {
-            code = String.valueOf(RANDOM.nextInt(100000, 1000000));  // 6-digit code
+            code = String.valueOf(RANDOM.nextInt(100000, 1000000)); // 6-digit code
         } while (this.linkRequests.containsKey(code));
         this.linkRequests.put(code, new LinkRequest(profile.getId(), profile.getName(), expiryTime));
         return code;
@@ -218,8 +258,9 @@ public class LinkManager extends ListenerAdapter {
             return;
         }
         Set<Long> memberSet = members.stream().map(Member::getIdLong).collect(Collectors.toSet());
-        List<PlayerLink> toRemove = this.linkData.getPlayerLinks().filter(link -> !memberSet.contains(link.getDiscordId()))
-            .toList();
+        List<PlayerLink> toRemove = this.linkData.getPlayerLinks()
+                .filter(link -> !memberSet.contains(link.getDiscordId()))
+                .toList();
         toRemove.forEach(this::unlinkPlayer);
         if (!toRemove.isEmpty()) {
             LOGGER.info("Purged {} linked players", toRemove.size());
@@ -264,7 +305,7 @@ public class LinkManager extends ListenerAdapter {
         }
 
         kickAccounts(member, this.integration.getConfig().kickMessages.kickOnLeave);
-        if(unlinkPlayer(member.getIdLong())) {
+        if (unlinkPlayer(member.getIdLong())) {
             LOGGER.info("Removed link of \"{}\" because they left the guild.", member.getEffectiveName());
         }
     }

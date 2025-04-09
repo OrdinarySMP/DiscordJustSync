@@ -33,6 +33,9 @@ repositories {
         url "https://maven.nucleoid.xyz/"
         name "Nucleoid"
     }
+    maven {
+        url = uri("https://repo.opencollab.dev/main/")
+    }
     maven { url 'https://jitpack.io' }
 }
 
@@ -89,6 +92,7 @@ dependencies {
     embed implementation('club.minnced:discord-webhooks:0.8.4')
     embed implementation("de.erdbeerbaerlp:toml4j:dd60f51")
     compileOnly 'net.luckperms:api:5.4'
+    compileOnly('org.geysermc.floodgate:api:2.2.4-SNAPSHOT')
     modCompileOnly "maven.modrinth:vanish:1.5.11+1.21.4"
     modImplementation("eu.pb4:placeholder-api:2.5.2+1.21.3")
 }
