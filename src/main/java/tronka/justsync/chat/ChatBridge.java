@@ -157,7 +157,7 @@ public class ChatBridge extends ListenerAdapter {
             return;
         }
         long playerCount;
-        if (this.integration.getServer() == null) {
+        if (this.integration.getServer() == null || this.integration.getServer().getPlayerManager() == null) {
             playerCount = 0;
         } else {
             playerCount = this.integration.getServer().getPlayerManager()
