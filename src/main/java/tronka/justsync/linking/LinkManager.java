@@ -60,9 +60,6 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public boolean isAllowedToJoin(Member member) {
-        if (!this.integration.getConfig().linking.enableLinking) {
-            return true;
-        }
         List<Role> roles = new ArrayList<>(member.getRoles());
         if (this.integration.getConfig().linking.requiredRolesCount == -1) {
             return roles.containsAll(this.requiredRoles);
@@ -92,6 +89,9 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public boolean canJoin(UUID playerId) {
+        if (!this.integration.getConfig().linking.enableLinking) {
+            return true;
+        }
         Optional<Member> member = getDiscordOf(playerId);
         if (member.isEmpty()) {
             return false;
