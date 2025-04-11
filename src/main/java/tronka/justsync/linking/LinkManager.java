@@ -13,6 +13,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
@@ -56,6 +58,10 @@ public class LinkManager extends ListenerAdapter {
                 this.integration.getConfig().linking.joinRoles);
         this.allowMixedAccountTypesBypass = Utils.parseRoleList(this.integration.getGuild(),
                 this.integration.getConfig().integrations.allowMixedAccountTypesBypass);
+    }
+
+    public Stream<PlayerLink> getAllLinks() {
+        return this.linkData.getPlayerLinks();
     }
 
     public Optional<Member> getDiscordOf(UUID playerId) {
