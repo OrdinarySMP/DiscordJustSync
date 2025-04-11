@@ -13,6 +13,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
@@ -49,6 +51,10 @@ public class LinkManager extends ListenerAdapter {
             JustSyncApplication.getConfigFolder().resolve(JustSyncApplication.ModId + ".player-links.json").toFile());
         this.requiredRoles = Utils.parseRoleList(this.integration.getGuild(), this.integration.getConfig().linking.requiredRoles);
         this.joinRoles = Utils.parseRoleList(this.integration.getGuild(), this.integration.getConfig().linking.joinRoles);
+    }
+
+    public Stream<PlayerLink> getAllLinks() {
+        return this.linkData.getPlayerLinks();
     }
 
     public Optional<Member> getDiscordOf(UUID playerId) {
