@@ -4,9 +4,9 @@
   "version": "${version}",
   "name": "Discord: JustSync",
   "description": "",
-  "authors": [],
+  "authors": ["nombel_mombel", "GoldenKoopa"],
   "contact": {},
-  "license": "All-Rights-Reserved",
+  "license": "GPL-3.0 license",
   "icon": "assets/justsync/icon.png",
   "environment": "*",
   "entrypoints": {
