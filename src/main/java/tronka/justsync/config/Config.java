@@ -231,6 +231,13 @@ public class Config {
 
         @TomlComment("Vanish https://modrinth.com/mod/vanish")
         public boolean enableVanishIntegration = true;
+        @TomlComment({"Floodgate https://modrinth.com/mod/floodgate",
+            "set to false to disable java players using bedrock as alts and vice versa"})
+        public boolean allowMixedAccountTypes = true;
+        @TomlComment("Discord roles to bypass restriction if set to false")
+        public List<String> allowMixedAccountTypesBypass= new ArrayList<>();
+        @TomlComment("Deny message for wrong account type (response of /link command)")
+        public String mixedAccountTypeDenyMessage = "You are not allowed to mix account types on this server";
         @TomlComment("Luck Perms https://modrinth.com/plugin/luckperms")
         public boolean enableLuckPermsIntegration = true;
         public LuckPermsIntegration luckPerms = new LuckPermsIntegration();
