@@ -1,7 +1,9 @@
 package tronka.justsync.compat;
 
+import net.fabricmc.loader.api.FabricLoader;
 import org.geysermc.floodgate.api.FloodgateApi;
 import tronka.justsync.JustSyncApplication;
+import tronka.justsync.config.Config;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -12,11 +14,14 @@ public class FloodgateIntegration {
     private FloodgateApi floodgateApi;
 
     public FloodgateIntegration(JustSyncApplication integration) {
-        if (integration.getConfig().integrations.allowMixedAccountTypes) {
-            return;
+        if (FabricLoader.getInstance().isModLoaded("floodgate-modded")) {
+            this.floodgateApi = FloodgateApi.getInstance();
         }
-        this.floodgateApi = FloodgateApi.getInstance();
-        this.loaded = true;
+        integration.registerConfigReloadHandler(this::onConfigLoaded);
+    }
+
+    private void onConfigLoaded(Config config) {
+        this.loaded = !config.integrations.floodgate.allowMixedAccountTypes && this.floodgateApi != null;
     }
 
     public boolean isLoaded() {
@@ -24,19 +29,17 @@ public class FloodgateIntegration {
     }
 
     public boolean isBedrock(UUID uuid) {
-        return this.floodgateApi.isFloodgateId(uuid);
+        return this.isLoaded() && this.floodgateApi.isFloodgateId(uuid);
     }
 
     public String getUsername(UUID uuid) {
-        try {
-            return this.floodgateApi.getGamertagFor(uuid.getLeastSignificantBits()).get();
-        } catch (InterruptedException | ExecutionException ignored) {
+        if (this.isLoaded()) {
+            try {
+                return this.floodgateApi.getGamertagFor(uuid.getLeastSignificantBits()).get();
+            } catch (InterruptedException | ExecutionException ignored) {
+            }
         }
         return "unknown";
-    }
-
-    private FloodgateApi getFloodgateApi() {
-        return this.floodgateApi;
     }
 
 }

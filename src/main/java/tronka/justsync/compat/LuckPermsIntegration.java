@@ -6,6 +6,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import tronka.justsync.JustSyncApplication;
+import tronka.justsync.config.Config;
 
 public class LuckPermsIntegration {
 
@@ -14,13 +15,14 @@ public class LuckPermsIntegration {
 
     public LuckPermsIntegration(JustSyncApplication integration) {
         this.integration = integration;
-        if (!integration.getConfig().integrations.enableLuckPermsIntegration) {
-            return;
-        }
         if (!FabricLoader.getInstance().isModLoaded("luckperms")) {
             return;
         }
-        this.loaded = true;
+        integration.registerConfigReloadHandler(this::onConfigLoaded);
+    }
+
+    private void onConfigLoaded(Config config) {
+        this.loaded = config.integrations.enableLuckPermsIntegration;
     }
 
     private LuckPerms getLuckPerms() {
@@ -35,7 +37,7 @@ public class LuckPermsIntegration {
     }
 
     public void setAlt(UUID uuid) {
-        final LuckPerms luckPerms = getLuckPerms();
+        final LuckPerms luckPerms = this.getLuckPerms();
         if (luckPerms == null) {
             return;
         }
@@ -48,7 +50,7 @@ public class LuckPermsIntegration {
     }
 
     public void unsetAlt(UUID uuid) {
-        final LuckPerms luckPerms = getLuckPerms();
+        final LuckPerms luckPerms = this.getLuckPerms();
         if (luckPerms == null) {
             return;
         }

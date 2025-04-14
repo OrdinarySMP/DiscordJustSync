@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
+import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
@@ -68,8 +69,16 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
     }
 
     private void startJDA() {
-        this.jda = JDABuilder.createLight(this.config.botToken, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT,
-            GatewayIntent.GUILD_MEMBERS).setMemberCachePolicy(MemberCachePolicy.ALL).addEventListeners(this).build();
+        try {
+            this.jda = JDABuilder.createLight(this.config.botToken, GatewayIntent.GUILD_MESSAGES,
+                    GatewayIntent.MESSAGE_CONTENT,
+                    GatewayIntent.GUILD_MEMBERS).setMemberCachePolicy(MemberCachePolicy.ALL).addEventListeners(this)
+                .build();
+        } catch (InvalidTokenException e) {
+            LOGGER.error("Please enter a valid bot token in the Discord-JS config file in {}",
+                getConfigFolder().toAbsolutePath());
+            System.exit(-1);
+        }
     }
 
     private void onServerStopped(MinecraftServer server) {
@@ -78,7 +87,7 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
 
     @Override
     public void onReady(@NotNull ReadyEvent event) {
-        String reloadResult = tryReloadConfig();
+        String reloadResult = this.tryReloadConfig();
         if (!reloadResult.isEmpty()) {
             throw new RuntimeException(reloadResult);
         }
@@ -92,17 +101,17 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
         this.luckPermsIntegration = new LuckPermsIntegration(this);
         this.vanishIntegration = new VanishIntegration(this);
         this.floodgateIntegration = new FloodgateIntegration(this);
-        registerConfigReloadHandler(this::onConfigReloaded);
+        this.registerConfigReloadHandler(this::onConfigReloaded);
     }
 
     private void onConfigReloaded(Config config) {
         // bring all members into cache
         this.guild.loadMembers().onSuccess(members -> {
-            setReady();
+            this.setReady();
             this.linkManager.unlinkPlayers(members);
         }).onError(t -> {
             LOGGER.error("Unable to load members", t);
-            setReady();
+            this.setReady();
         });
     }
 
