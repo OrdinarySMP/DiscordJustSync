@@ -64,7 +64,7 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
         ServerLifecycleEvents.SERVER_STARTING.register(s -> this.server = s);
         ServerLifecycleEvents.SERVER_STOPPED.register(this::onServerStopped);
         Thread jdaThread = new Thread(this::startJDA);
-        new InGameDiscordCommand(this);
+        new InGameCommand(this);
         jdaThread.start();
     }
 

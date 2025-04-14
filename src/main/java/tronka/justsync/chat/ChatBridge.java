@@ -5,7 +5,6 @@ import eu.pb4.placeholders.api.node.TextNode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Message;
@@ -45,13 +44,13 @@ public class ChatBridge extends ListenerAdapter {
     private void onConfigLoaded(Config config) {
         this.channel = Utils.getTextChannel(this.integration.getJda(), config.serverChatChannel);
         this.messageSender = null;
-        setWebhook(null);
+        this.setWebhook(null);
         if (this.integration.getConfig().useWebHooks) {
             this.channel.retrieveWebhooks().onSuccess((webhooks -> {
                 Optional<Webhook> hook = webhooks.stream()
                     .filter(w -> w.getOwner() == this.integration.getGuild().getSelfMember()).findFirst();
                 if (hook.isPresent()) {
-                    setWebhook(hook.get());
+                    this.setWebhook(hook.get());
                 } else {
                     this.channel.createWebhook(webhookId).onSuccess(this::setWebhook).queue();
                 }
@@ -116,30 +115,30 @@ public class ChatBridge extends ListenerAdapter {
         String replyUser = repliedMessage == null ? "%userRepliedTo%"
             : (repliedMessage.getMember() == null ? repliedMessage.getAuthor().getEffectiveName()
                 : repliedMessage.getMember().getEffectiveName());
-        sendMcChatMessage(TextReplacer.create()
+        this.sendMcChatMessage(TextReplacer.create()
             .replace("msg", Utils.parseUrls(messageText, this.integration.getConfig()))
             .replace("user", event.getMember().getEffectiveName()).replace("userRepliedTo", replyUser)
             .replace("attachments", attachmentInfo).apply(baseText));
     }
 
     public void onPlayerJoin(ServerPlayerEntity player) {
-        onPlayerJoin(player, false);
+        this.onPlayerJoin(player, false);
     }
 
     public void onPlayerJoin(ServerPlayerEntity player, boolean vanish) {
-        sendMessageToDiscord(this.integration.getConfig().messages.playerJoinMessage.replace("%user%",
+        this.sendMessageToDiscord(this.integration.getConfig().messages.playerJoinMessage.replace("%user%",
             Utils.escapeUnderscores(player.getName().getString())), null);
-        updateRichPresence(vanish ? 0 : 1);
+        this.updateRichPresence(vanish ? 0 : 1);
     }
 
     public void onPlayerTimeOut(ServerPlayerEntity player) {
-        sendMessageToDiscord(this.integration.getConfig().messages.playerTimeOutMessage.replace("%user%",
+        this.sendMessageToDiscord(this.integration.getConfig().messages.playerTimeOutMessage.replace("%user%",
                 Utils.escapeUnderscores(player.getName().getString())), null);
-        updateRichPresence(-1);
+        this.updateRichPresence(-1);
     }
 
     public void onPlayerLeave(ServerPlayerEntity player) {
-        onPlayerLeave(player, false);
+        this.onPlayerLeave(player, false);
     }
 
     public void onPlayerLeave(ServerPlayerEntity player, boolean vanish) {
@@ -147,9 +146,9 @@ public class ChatBridge extends ListenerAdapter {
             return;
         }
 
-        sendMessageToDiscord(this.integration.getConfig().messages.playerLeaveMessage.replace("%user%",
+        this.sendMessageToDiscord(this.integration.getConfig().messages.playerLeaveMessage.replace("%user%",
             Utils.escapeUnderscores(player.getName().getString())), null);
-        updateRichPresence(vanish ? 0 : -1);
+        this.updateRichPresence(vanish ? 0 : -1);
     }
 
     private void updateRichPresence(int modifier) {
@@ -179,13 +178,13 @@ public class ChatBridge extends ListenerAdapter {
             if (message.equals("death.attack.badRespawnPoint")) {
                 message = "%s was killed by [Intentional Mod Design]".formatted(player.getName().getString());
             }
-            sendMessageToDiscord(Utils.escapeUnderscores(message), null);
+            this.sendMessageToDiscord(Utils.escapeUnderscores(message), null);
         }
     }
 
     public void onReceiveAdvancement(ServerPlayerEntity player, AdvancementDisplay advancement) {
         if (this.integration.getConfig().announceAdvancements && advancement.shouldAnnounceToChat()) {
-            sendMessageToDiscord(this.integration.getConfig().messages.advancementMessage.replace("%user%",
+            this.sendMessageToDiscord(this.integration.getConfig().messages.advancementMessage.replace("%user%",
                     Utils.escapeUnderscores(player.getName().getString()))
                 .replace("%title%", advancement.getTitle().getString())
                 .replace("%description%", advancement.getDescription().getString()), null);
@@ -197,7 +196,7 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     private void onServerStopping(MinecraftServer minecraftServer) {
-        sendMessageToDiscord(this.integration.getConfig().messages.stopMessage, null);
+        this.sendMessageToDiscord(this.integration.getConfig().messages.stopMessage, null);
         this.stopped = true;
     }
 
@@ -207,7 +206,7 @@ public class ChatBridge extends ListenerAdapter {
             message = Utils.formatXaero(message, this.integration.getConfig());
             message = Utils.formatVoxel(message, this.integration.getConfig(), player);
         }
-        sendMessageToDiscord(message, player);
+        this.sendMessageToDiscord(message, player);
     }
 
     private void sendMessageToDiscord(String message, ServerPlayerEntity sender) {
@@ -245,6 +244,6 @@ public class ChatBridge extends ListenerAdapter {
         } else {
             message = prefix + data;
         }
-        sendMessageToDiscord(message, sender);
+        this.sendMessageToDiscord(message, sender);
     }
 }

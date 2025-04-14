@@ -92,7 +92,7 @@ public class DiscordChatMessageSender {
 
         this.lastUpdatedCount = this.repetitionCount;
         this.lastMessageEdit = System.currentTimeMillis();
-        editDiscordMessage();
+        this.editDiscordMessage();
     }
 
     private String cleanedMessage() {
@@ -123,7 +123,7 @@ public class DiscordChatMessageSender {
             this.editAsWebhook(this.cleanedMessage() + displayedCount);
             return;
         }
-        this.channel.editMessageById(this.messageId, getMessage() + displayedCount).submit()
+        this.channel.editMessageById(this.messageId, this.getMessage() + displayedCount).submit()
             .exceptionally(this::handleFailure);
     }
 
@@ -133,7 +133,7 @@ public class DiscordChatMessageSender {
     }
 
     private void sendAsWebhook() {
-        String avatarUrl = getAvatarUrl(this.sender);
+        String avatarUrl = this.getAvatarUrl(this.sender);
         WebhookMessage msg = new WebhookMessageBuilder().setUsername(this.sender.getName().getLiteralString())
             .setAvatarUrl(avatarUrl).setContent(this.cleanedMessage()).build();
         this.readyFuture = this.webhookClient.send(msg).thenApply(ReadonlyMessage::getId)

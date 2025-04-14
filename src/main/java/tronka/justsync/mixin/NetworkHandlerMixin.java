@@ -35,7 +35,7 @@ public class NetworkHandlerMixin {
     @Inject(method = "getSignedMessage", at = @At("RETURN"))
     private void onMessageValidated(ChatMessageC2SPacket packet, LastSeenMessageList lastSeenMessages,
         CallbackInfoReturnable<SignedMessage> cir) {
-        JustSyncApplication.getInstance().getChatBridge().onMcChatMessage(packet.chatMessage(), player);
+        JustSyncApplication.getInstance().getChatBridge().onMcChatMessage(packet.chatMessage(), this.player);
     }
 
 }

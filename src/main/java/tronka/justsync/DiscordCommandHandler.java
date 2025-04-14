@@ -3,7 +3,6 @@ package tronka.justsync;
 import com.mojang.authlib.GameProfile;
 
 import java.util.Objects;
-import java.security.Permissions;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -85,9 +84,9 @@ public class DiscordCommandHandler extends ListenerAdapter {
 
             }
 
-            case "list" -> listCommand(event);
+            case "list" -> this.listCommand(event);
 
-            case "justsync" -> linkingCommand(event);
+            case "justsync" -> this.linkingCommand(event);
 
             case "reload" -> {
                 String result = this.integration.tryReloadConfig();
@@ -128,7 +127,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
         }
 
         if (event.getSubcommandName().equals("alts")) {
-            listAlts(event);
+            this.listAlts(event);
             return;
         }
 
@@ -140,7 +139,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
             if (PermissionUtil.checkPermission(event.getMember(), Permission.MODERATE_MEMBERS)) {
                 event.deferReply().setEphemeral(true).queue();
                 GameProfile profile = Utils.fetchProfile(minecraftName);
-                linkingWithPlayer(event.getSubcommandName(), event.getHook(), profile);
+                this.linkingWithPlayer(event.getSubcommandName(), event.getHook(), profile);
                 return;
             } else {
                 event.reply("Insufficient permissions").setEphemeral(true).queue();
@@ -154,19 +153,19 @@ public class DiscordCommandHandler extends ListenerAdapter {
             event.reply("Insufficient permissions").setEphemeral(true).queue();
             return;
         }
-        linkingWithMember(event, target);
+        this.linkingWithMember(event, target);
     }
 
     private void listAlts(SlashCommandInteractionEvent event) {
         List<PlayerLink> linksWithAlts = this.integration.getLinkManager().getAllLinks()
                 .filter(link -> link.altCount() > 0).toList();
-        String message = "";
+        StringBuilder message = new StringBuilder();
         for (PlayerLink link : linksWithAlts) {
-            List<String> alts = link.getAlts().stream().map(playerData -> playerData.getName()).toList();
+            List<String> alts = link.getAlts().stream().map(PlayerData::getName).toList();
             String altsList = String.join("`, `", alts);
-            message = message + "`" + link.getPlayerName() + "`: `" + altsList + "`\n";
+            message.append("`").append(link.getPlayerName()).append("`: `").append(altsList).append("`\n");
         }
-        event.reply(message).setEphemeral(true).queue();
+        event.reply(message.toString()).setEphemeral(true).queue();
     }
 
 	// run with checked permissions
