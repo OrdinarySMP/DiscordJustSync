@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -95,10 +96,7 @@ public class ConsoleBridge extends ListenerAdapter {
         }
         message = message.substring(this.integration.getConfig().commands.commandPrefix.length());
         if (message.equals("help")) {
-            EmbedBuilder embed = new EmbedBuilder();
-            this.integration.getConfig().commands.commandList.forEach(
-                command -> embed.addField(command.commandName, command.inGameAction.replace("%args%", "<args>"), true));
-            event.getChannel().sendMessageEmbeds(embed.build()).queue();
+            event.getChannel().sendMessageEmbeds(this.getHelpEmbed()).queue();
             return;
         }
         String[] commandParts = message.split(" ", 2);
@@ -122,8 +120,34 @@ public class ConsoleBridge extends ListenerAdapter {
                 throw new RuntimeException(e);
             }
         } else {
-            event.getChannel().sendMessage("Unknown command: \"" + commandName + "\"").queue();
+            event.getChannel().sendMessage("Unknown command: \"%s\", use %shelp for a list of commands"
+                .formatted(commandName, this.integration.getConfig().commands.commandPrefix)).queue();
         }
+    }
+
+    private MessageEmbed getHelpEmbed() {
+        List<String> lines = this.integration.getConfig().commands.commandList.stream().map(
+            command -> "%s %s".formatted(command.commandName, command.inGameAction.replace("%args%", "<args>").trim())
+        ).toList();
+
+        EmbedBuilder embed = new EmbedBuilder();
+
+        List<String> chunk = new ArrayList<>();
+        int chunkSize = 0;
+        for (String line : lines) {
+            if (chunkSize + line.length() < 2000) {
+                chunk.add(line);
+                chunkSize += line.length() + 1;
+            } else {
+                embed.addField("Commands", String.join("\n", chunk), false);
+                chunk = new ArrayList<>();
+                chunk.add(line);
+                chunkSize = line.length();
+            }
+        }
+        embed.addField("Commands", String.join("\n", chunk), false);
+
+        return embed.build();
     }
 
     private record LogRedirect(TextChannel channel, List<String> prefixes) {

@@ -183,10 +183,6 @@ public class LinkManager extends ListenerAdapter {
 
     // also returns false if is mixed alt but bypasses or mixed accounts are allowed
     private boolean isMixedAlt(PlayerLink playerLink, LinkRequest linkRequest) {
-        if (!this.integration.getFloodgateIntegration().isLoaded()) {
-            return false;
-        }
-
         if (this.integration.getConfig().integrations.floodgate.allowMixedAccountTypes) {
             return false;
         }
@@ -201,7 +197,7 @@ public class LinkManager extends ListenerAdapter {
 
         roles.retainAll(this.allowMixedAccountTypesBypass);
 
-        return roles.size() <= 0;
+        return roles.isEmpty();
     }
 
     private boolean reachedMaxAlts(PlayerLink link) {

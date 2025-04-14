@@ -12,7 +12,6 @@ public class TextReplacer {
 
     private final ParserBuilder builder;
     private final Map<String, TextNode> placeholders;
-    private TagLikeParser.Format format;
 
     private TextReplacer(TagLikeParser.Format format) {
         this.placeholders = new HashMap<>();
@@ -29,7 +28,7 @@ public class TextReplacer {
     }
 
     public TextReplacer replace(String key, String value) {
-        return replace(key, TextNode.of(value));
+        return this.replace(key, TextNode.of(value));
     }
 
     public TextReplacer replace(String key, TextNode node) {
@@ -42,10 +41,10 @@ public class TextReplacer {
     }
 
     public Text apply(String text) {
-        return getParser().parseNode(text).toText();
+        return this.getParser().parseNode(text).toText();
     }
 
     public TextNode applyNode(String text) {
-        return getParser().parseNode(text);
+        return this.getParser().parseNode(text);
     }
 }

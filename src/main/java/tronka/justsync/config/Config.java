@@ -259,9 +259,9 @@ public class Config {
         @TomlIgnore
         public String consoleChannel = "";
 
-        @TomlComment("Channel to log commands into")
+        @TomlComment("Channel to log commands to")
         public String commandLogChannel = "";
-        @TomlComment("Channel to send commands into")
+        @TomlComment("Channel to execute commands in")
         public String commandChannel = "";
         @TomlComment("Whether all commands should be logged")
         public boolean logCommandsInConsole = true;
