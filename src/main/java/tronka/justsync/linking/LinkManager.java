@@ -19,6 +19,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.minecraft.server.MinecraftServer;
@@ -67,7 +68,7 @@ public class LinkManager extends ListenerAdapter {
     public Optional<Member> getDiscordOf(UUID playerId) {
         Optional<PlayerLink> link = this.linkData.getPlayerLink(playerId);
         if (link.isPresent()) {
-            return getDiscordOf(link.get());
+            return this.getDiscordOf(link.get());
         }
         return Optional.empty();
     }
@@ -82,7 +83,7 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public boolean isAllowedToJoin(long discordId) {
-        return isAllowedToJoin(this.integration.getGuild().getMemberById(discordId));
+        return this.isAllowedToJoin(this.integration.getGuild().getMemberById(discordId));
     }
 
     public Optional<Member> getDiscordOf(PlayerLink link) {
@@ -105,17 +106,14 @@ public class LinkManager extends ListenerAdapter {
         if (!this.integration.getConfig().linking.enableLinking) {
             return true;
         }
-        Optional<Member> member = getDiscordOf(playerId);
+        Optional<Member> member = this.getDiscordOf(playerId);
         if (member.isEmpty()) {
             return false;
         }
-        if (!isAllowedToJoin(member.get())) {
+        if (!this.isAllowedToJoin(member.get())) {
             return false;
         }
-        if (this.integration.getConfig().linking.disallowTimeoutMembersToJoin && member.get().isTimedOut()) {
-            return false;
-        }
-        return true;
+        return !this.integration.getConfig().linking.disallowTimeoutMembersToJoin || !member.get().isTimedOut();
     }
 
     public void onPlayerJoin(ServerPlayerEntity player) {
@@ -124,7 +122,7 @@ public class LinkManager extends ListenerAdapter {
             return;
         }
         PlayerLink data = dataOptional.get();
-        Optional<Member> memberOptional = getDiscordOf(data);
+        Optional<Member> memberOptional = this.getDiscordOf(data);
         if (memberOptional.isEmpty()) {
             return;
         }
@@ -144,22 +142,26 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public String getJoinError(GameProfile profile) {
-        Optional<Member> member = getDiscordOf(profile.getId());
+        Optional<Member> member = this.getDiscordOf(profile.getId());
         if (member.isEmpty()) {
-            String code = generateLinkCode(profile);
+            String code = this.generateLinkCode(profile);
             return this.integration.getConfig().kickMessages.kickLinkCode.formatted(code);
         }
-        if (member.get().isTimedOut()) {
+        return this.getJoinError(member.get());
+    }
+
+    private String getJoinError(Member member) {
+        if (member.isTimedOut()) {
             return this.integration.getConfig().kickMessages.kickTimedOut;
         }
         return this.integration.getConfig().kickMessages.kickMissingRoles;
     }
 
     public String confirmLink(long discordId, String code) {
-        if (!isAllowedToJoin(discordId)) {
+        if (!this.isAllowedToJoin(discordId)) {
             return this.integration.getConfig().linkResults.linkNotAllowed;
         }
-        Optional<LinkRequest> linkRequest = getPlayerLinkFromCode(code);
+        Optional<LinkRequest> linkRequest = this.getPlayerLinkFromCode(code);
         if (linkRequest.isEmpty()) {
             return this.integration.getConfig().linkResults.failedUnknownCode;
         }
@@ -167,7 +169,7 @@ public class LinkManager extends ListenerAdapter {
         if (existing.isPresent()) {
             PlayerLink link = existing.get();
 
-            if (isMixedAlt(link, linkRequest.get())) {
+            if (this.isMixedAlt(link, linkRequest.get())) {
                 return this.integration.getConfig().integrations.mixedAccountTypeDenyMessage;
             }
 
@@ -204,11 +206,7 @@ public class LinkManager extends ListenerAdapter {
 
         roles.retainAll(this.allowMixedAccountTypesBypass);
 
-        if (roles.size() > 0) {
-            return false;
-        }
-
-        return true;
+        return roles.size() <= 0;
     }
 
     private boolean reachedMaxAlts(PlayerLink link) {
@@ -242,7 +240,7 @@ public class LinkManager extends ListenerAdapter {
 
     public String generateLinkCode(GameProfile profile) {
         if (this.linkRequests.size() >= PURGE_LIMIT) {
-            purgeCodes();
+            this.purgeCodes();
         }
 
         long expiryTime = System.currentTimeMillis()
@@ -310,8 +308,8 @@ public class LinkManager extends ListenerAdapter {
             return;
         }
 
-        kickAccounts(member, this.integration.getConfig().kickMessages.kickOnLeave);
-        if (unlinkPlayer(member.getIdLong())) {
+        this.kickAccounts(member, this.integration.getConfig().kickMessages.kickOnLeave);
+        if (this.unlinkPlayer(member.getIdLong())) {
             LOGGER.info("Removed link of \"{}\" because they left the guild.", member.getEffectiveName());
         }
     }
@@ -341,5 +339,12 @@ public class LinkManager extends ListenerAdapter {
         link.removeAlt(altUuid);
         this.integration.getDiscordLogger().onUnlinkAlt(altUuid);
         this.integration.getLuckPermsIntegration().unsetAlt(altUuid);
+    }
+
+    @Override
+    public void onGuildMemberUpdate(GuildMemberUpdateEvent event) {
+        if (this.isAllowedToJoin(event.getMember())) {
+            this.kickAccounts(event.getMember(), this.getJoinError(event.getMember()));
+        }
     }
 }
