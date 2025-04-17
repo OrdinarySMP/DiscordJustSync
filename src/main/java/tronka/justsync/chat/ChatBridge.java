@@ -38,7 +38,7 @@ public class ChatBridge extends ListenerAdapter {
         this.integration = integration;
         ServerLifecycleEvents.SERVER_STOPPING.register(this::onServerStopping);
         integration.registerConfigReloadHandler(this::onConfigLoaded);
-        this.channel.sendMessage(integration.getConfig().messages.startMessage).queue();
+        this.sendMessageToDiscord(integration.getConfig().messages.startMessage, null);
     }
 
     private void onConfigLoaded(Config config) {
@@ -210,11 +210,14 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     private void sendMessageToDiscord(String message, ServerPlayerEntity sender) {
+        if (message.trim().isEmpty()) {
+            return;
+        }
         if (this.messageSender == null || this.messageSender.hasChanged(message, sender)) {
             this.messageSender = new DiscordChatMessageSender(this.webhookClient, this.channel,
                 this.integration.getConfig(), message, sender);
         }
-        this.messageSender.sendMessage();
+            this.messageSender.sendMessage();
     }
 
     @Override
