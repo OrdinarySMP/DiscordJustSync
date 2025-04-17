@@ -19,6 +19,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.minecraft.server.MinecraftServer;
@@ -146,7 +147,11 @@ public class LinkManager extends ListenerAdapter {
             String code = this.generateLinkCode(profile);
             return this.integration.getConfig().kickMessages.kickLinkCode.formatted(code);
         }
-        if (member.get().isTimedOut()) {
+        return this.getJoinError(member.get());
+    }
+
+    private String getJoinError(Member member) {
+        if (member.isTimedOut()) {
             return this.integration.getConfig().kickMessages.kickTimedOut;
         }
         return this.integration.getConfig().kickMessages.kickMissingRoles;
@@ -330,5 +335,12 @@ public class LinkManager extends ListenerAdapter {
         link.removeAlt(altUuid);
         this.integration.getDiscordLogger().onUnlinkAlt(altUuid);
         this.integration.getLuckPermsIntegration().unsetAlt(altUuid);
+    }
+
+    @Override
+    public void onGuildMemberUpdate(GuildMemberUpdateEvent event) {
+        if (!this.isAllowedToJoin(event.getMember())) {
+            this.kickAccounts(event.getMember(), this.getJoinError(event.getMember()));
+        }
     }
 }
