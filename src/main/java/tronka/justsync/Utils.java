@@ -94,6 +94,9 @@ public class Utils {
     }
 
     public static GameProfile fetchProfile(String name) {
+        if (JustSyncApplication.getInstance().getFloodgateIntegration().isFloodGateName(name)) {
+            return JustSyncApplication.getInstance().getFloodgateIntegration().getGameProfileFor(name);
+        }
         try {
             return fetchProfileData("https://api.mojang.com/users/profiles/minecraft/" + name);
         } catch (IOException ignored) {}

@@ -1,5 +1,6 @@
 package tronka.justsync;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -41,12 +42,34 @@ public class InGameCommand {
     }
 
     private LiteralArgumentBuilder<ServerCommandSource> getInfoSubcommand() {
-        return CommandManager.literal("get").requires(Permissions.require("justsync.get", 4))
-            .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
+        return CommandManager.literal("get").executes(this::getSelfLinkInfo)
+            .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile()).requires(Permissions.require("justsync.get", 4))
                 .requires(Permissions.require("justsync.get", 4)).executes(this::getLinkInfo));
     }
 
-    private int getLinkInfo(CommandContext<ServerCommandSource> context) {
+    private int getLinkInfo(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
+        Collection<String> lines = new ArrayList<>();
+        for (GameProfile profile : profiles) {
+            Optional<PlayerLink> optionalLink = this.integration.getLinkManager().getDataOf(profile.getId());
+            if (optionalLink.isEmpty()) {
+                lines.add("No records for " + profile.getName());
+            } else {
+                Optional<Member> member = this.integration.getLinkManager().getDiscordOf(optionalLink.get());
+                if (member.isPresent()) {
+                    lines.add(formatPlayerInfo(optionalLink.get(), member.get()));
+                } else {
+                    lines.add("Unable to load discord member for " + profile.getName());
+
+                }
+            }
+
+        }
+        context.getSource().sendFeedback(() -> Text.literal(String.join("\n", lines)), false);
+        return 1;
+    }
+
+    private int getSelfLinkInfo(CommandContext<ServerCommandSource> context) {
         ServerPlayerEntity player = context.getSource().getPlayer();
         if (player == null) {
             context.getSource().sendFeedback(() -> Text.literal("Player only!"),
@@ -73,19 +96,24 @@ public class InGameCommand {
             return 1;
         }
 
+        String message = formatPlayerInfo(playerLink, member.get());
+        context.getSource()
+            .sendFeedback(() -> Text.literal(message), false);
+        return 1;
+    }
+
+    private static String formatPlayerInfo(PlayerLink playerLink, Member member) {
         StringBuilder message = new StringBuilder()
             .append(playerLink.getPlayerName())
             .append(" (@")
-            .append(member.get().getEffectiveName())
+            .append(member.getEffectiveName())
             .append(")");
 
         if (playerLink.altCount() > 0) {
             message.append(" Alts: ").append(String.join(", ", playerLink.getAlts()
                 .stream().map(PlayerData::getName).toList()));
         }
-        context.getSource()
-            .sendFeedback(() -> Text.literal(message.toString()), false);
-        return 1;
+        return message.toString();
     }
 
     private LiteralArgumentBuilder<ServerCommandSource> reloadSubcommand() {
