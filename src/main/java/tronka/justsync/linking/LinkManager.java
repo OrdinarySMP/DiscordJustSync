@@ -324,6 +324,9 @@ public class LinkManager extends ListenerAdapter {
 
     private void tryKickPlayer(UUID uuid, String reason) {
         MinecraftServer server = this.integration.getServer();
+        if (server == null) {
+            return;
+        }
         ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
         if (player != null) {
             player.networkHandler.disconnect(Text.of(reason));
