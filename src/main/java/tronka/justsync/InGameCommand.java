@@ -141,14 +141,20 @@ public class InGameCommand {
 
     private int unlinkSpecifiedPlayer(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
-
+        int count = 0;
         for (GameProfile profile : profiles) {
-            this.integration.getLinkManager().unlinkPlayer(profile.getId());
+            if (this.integration.getLinkManager().unlinkPlayer(profile.getId())) {
+                count++;
+            }
         }
-        context.getSource().sendFeedback(() -> Text.literal(
-                "Successfully unlinked %d player(s)".formatted(profiles.size())),
-            false);
-        return 1;
+        if (count > 0) {
+            context.getSource().sendFeedback(() -> Text.literal(
+                    "Successfully unlinked %d player(s)".formatted(profiles.size())),
+                false);
+            return count;
+        }
+        context.getSource().sendFeedback(() -> Text.literal("Found no linked players!"), false);
+        return 0;
     }
 
     private int unlinkSelf(CommandContext<ServerCommandSource> context) {
