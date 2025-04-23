@@ -21,7 +21,7 @@ public class DiscordLogger {
 
     private void onConfigLoaded(Config config) {
         if (this.integration.getConfig().linking.logLinking) {
-            this.channel = Utils.getTextChannel(this.integration.getJda(), config.linking.linkingLogChannel);
+            this.channel = Utils.getTextChannel(this.integration.getJda(), config.linking.linkingLogChannel, "linkingLogChannel");
             if (this.channel == null) {
                 LogUtils.getLogger().error("invalid linkingLogChannel id");
             }
