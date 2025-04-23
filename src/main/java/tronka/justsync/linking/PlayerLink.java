@@ -66,6 +66,13 @@ public class PlayerLink {
         return ImmutableList.copyOf(this.alts);
     }
 
+    public List<UUID> getAllUuids() {
+        List<UUID> uuids = new ArrayList<>();
+        this.alts.forEach(alt -> uuids.add(alt.getId()));
+        uuids.add(this.playerId);
+        return uuids;
+    }
+
     public void setDataObj(LinkData dataObj) {
         this.dataObj = dataObj;
     }
