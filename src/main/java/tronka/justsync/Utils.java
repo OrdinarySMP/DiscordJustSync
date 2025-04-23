@@ -73,11 +73,20 @@ public class Utils {
         return roles;
     }
 
-    public static TextChannel getTextChannel(JDA jda, String id) {
+    public static TextChannel getTextChannel(JDA jda, String id, String debugName) {
         if (id == null || id.length() < 5) {
             return null;
         }
-        return jda.getTextChannelById(id);
+        TextChannel result;
+        try {
+            result = jda.getTextChannelById(id);
+        } catch (NumberFormatException ignored) {
+            result = null;
+        }
+        if (result == null) {
+            LogUtils.getLogger().info("Invalid channel id: '{}' for {}", id, debugName);
+        }
+        return result;
     }
 
     public static String getPlayerName(UUID uuid) {

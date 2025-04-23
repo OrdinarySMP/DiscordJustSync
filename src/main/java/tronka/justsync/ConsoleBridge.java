@@ -30,8 +30,8 @@ public class ConsoleBridge extends ListenerAdapter {
     }
 
     private void onConfigLoaded(Config config) {
-        this.commandLogChannel = Utils.getTextChannel(this.integration.getJda(), config.commands.commandLogChannel);
-        this.commandChannel = Utils.getTextChannel(this.integration.getJda(), config.commands.commandChannel);
+        this.commandLogChannel = Utils.getTextChannel(this.integration.getJda(), config.commands.commandLogChannel, "commandLogChannel");
+        this.commandChannel = Utils.getTextChannel(this.integration.getJda(), config.commands.commandChannel, "commandChannel");
         String opRoleId = this.integration.getConfig().commands.opRole;
         if (this.commandChannel != null && !opRoleId.isEmpty()) {
             this.opRole = this.commandChannel.getGuild().getRoleById(opRoleId);
@@ -40,7 +40,7 @@ public class ConsoleBridge extends ListenerAdapter {
         }
         this.logRedirects = new ArrayList<>();
         for (Config.LogRedirectChannel logRedirectChannel : config.commands.logRedirectChannels) {
-            TextChannel channel = Utils.getTextChannel(this.integration.getJda(), logRedirectChannel.channel);
+            TextChannel channel = Utils.getTextChannel(this.integration.getJda(), logRedirectChannel.channel, "logRedirectChannel");
             if (channel != null) {
                 this.logRedirects.add(new LogRedirect(channel, logRedirectChannel.redirectPrefixes));
             } else {

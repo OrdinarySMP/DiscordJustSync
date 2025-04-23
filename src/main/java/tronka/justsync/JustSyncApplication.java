@@ -91,17 +91,21 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
         if (!reloadResult.isEmpty()) {
             throw new RuntimeException(reloadResult);
         }
-
-        this.jda.addEventListener(new DiscordCommandHandler(this));
-        this.jda.addEventListener(this.chatBridge = new ChatBridge(this));
-        this.jda.addEventListener(this.consoleBridge = new ConsoleBridge(this));
-        this.jda.addEventListener(this.linkManager = new LinkManager(this));
-        this.jda.addEventListener(this.timeoutManager = new TimeoutManager(this));
-        this.discordLogger = new DiscordLogger(this);
-        this.luckPermsIntegration = new LuckPermsIntegration(this);
-        this.vanishIntegration = new VanishIntegration(this);
-        this.floodgateIntegration = new FloodgateIntegration(this);
-        this.registerConfigReloadHandler(this::onConfigReloaded);
+        try {
+            this.jda.addEventListener(new DiscordCommandHandler(this));
+            this.jda.addEventListener(this.chatBridge = new ChatBridge(this));
+            this.jda.addEventListener(this.consoleBridge = new ConsoleBridge(this));
+            this.jda.addEventListener(this.linkManager = new LinkManager(this));
+            this.jda.addEventListener(this.timeoutManager = new TimeoutManager(this));
+            this.discordLogger = new DiscordLogger(this);
+            this.luckPermsIntegration = new LuckPermsIntegration(this);
+            this.vanishIntegration = new VanishIntegration(this);
+            this.floodgateIntegration = new FloodgateIntegration(this);
+            this.registerConfigReloadHandler(this::onConfigReloaded);
+        } catch (Exception e) {
+            LOGGER.error("failed to initialize Discord Just Sync! Please report this crash on github or our discord server!", e);
+            System.exit(-1);
+        }
     }
 
     private void onConfigReloaded(Config config) {
@@ -172,7 +176,7 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
     public String tryReloadConfig() {
         LOGGER.info("Reloading Config...");
         Config newConfig = Config.loadConfig();
-        TextChannel serverChatChannel = Utils.getTextChannel(this.jda, newConfig.serverChatChannel);
+        TextChannel serverChatChannel = Utils.getTextChannel(this.jda, newConfig.serverChatChannel, "serverChatChannel");
         if (serverChatChannel == null) {
             return "Fail to load config: Please enter a valid serverChatChannelId in the config file in " + getConfigFolder().toAbsolutePath();
         }
