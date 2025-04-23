@@ -42,7 +42,7 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     private void onConfigLoaded(Config config) {
-        this.channel = Utils.getTextChannel(this.integration.getJda(), config.serverChatChannel);
+        this.channel = Utils.getTextChannel(this.integration.getJda(), config.serverChatChannel, "serverChatChannel");
         this.messageSender = null;
         this.setWebhook(null);
         if (this.integration.getConfig().useWebHooks) {
