@@ -58,7 +58,7 @@ public class Config {
 
 
     @TomlComment("Version of the Config file, do not touch!")
-    public int configVersion = 2;
+    public int configVersion = 3;
 
     public MessageStrings messages = new MessageStrings();
     public LinkingOptions linking = new LinkingOptions();
@@ -101,6 +101,17 @@ public class Config {
             config.commands.commandLogChannel = config.commands.consoleChannel;
             config.commands.commandChannel = config.commands.consoleChannel;
             config.configVersion = 2;
+        }
+
+        // 2 -> 3
+        if (config.configVersion < 3) {
+            config.integrations.floodgate.allowLinkingMixedAccountTypes =
+                    config.integrations.floodgate.allowMixedAccountTypes;
+            config.integrations.floodgate.allowLinkingMixedAccountTypesBypass =
+                    config.integrations.floodgate.allowMixedAccountTypesBypass;
+            config.integrations.floodgate.linkingMixedAccountTypesDenyMessage =
+                    config.integrations.floodgate.mixedAccountTypeDenyMessage;
+            config.configVersion = 3;
         }
     }
 
@@ -237,13 +248,31 @@ public class Config {
         public FloodGateIntegration floodgate = new FloodGateIntegration();
 
         public static class FloodGateIntegration {
-            @TomlComment({"Floodgate https://modrinth.com/mod/floodgate",
-                "set to false to disable java players using bedrock as alts and vice versa"})
+            @TomlIgnore
+            @Deprecated
             public boolean allowMixedAccountTypes = true;
-            @TomlComment("Discord roles to bypass restriction if set to false")
+            @TomlIgnore
+            @Deprecated
             public List<String> allowMixedAccountTypesBypass= new ArrayList<>();
-            @TomlComment("Deny message for wrong account type (response of /link command)")
+            @TomlIgnore
+            @Deprecated
             public String mixedAccountTypeDenyMessage = "You are not allowed to mix account types on this server";
+
+
+            @TomlComment({"Floodgate https://modrinth.com/mod/floodgate",
+                "set to false to disable java players linking bedrock as alts and vice versa"})
+            public boolean allowLinkingMixedAccountTypes = true;
+            @TomlComment("Discord roles to bypass above restriction if set to false")
+            public List<String> allowLinkingMixedAccountTypesBypass = new ArrayList<>();
+            @TomlComment("Deny message for wrong account type (response of /link command)")
+            public String linkingMixedAccountTypesDenyMessage = "You are not allowed to mix account types on this server";
+
+            @TomlComment("set false to disallow mixed account types to join at the same time")
+            public boolean allowJoiningMixedAccountTypes = true;
+            @TomlComment("Discord roles to bypass above restrictions if set to false")
+            public List<String> allowJoiningMixedAccountTypesBypass = new ArrayList<>();
+            @TomlComment("Kick message when trying to join with mixed account types")
+            public String joiningMixedAccountTypesKickMessage = "You are not allowed to join with mixed account types at the same time";
         }
 
         public static class LuckPermsIntegration {

@@ -43,8 +43,10 @@ public class LinkManager extends ListenerAdapter {
     private List<Role> requiredRoles;
     private List<Role> joinRoles;
     private List<Role> allowMixedAccountTypesBypass;
+    private List<Role> allowJoiningMixedAccountTypesBypass;
 
-    public LinkManager(JustSyncApplication integration) {
+
+	public LinkManager(JustSyncApplication integration) {
         this.integration = integration;
         integration.registerConfigReloadHandler(this::onConfigLoaded);
     }
@@ -58,7 +60,9 @@ public class LinkManager extends ListenerAdapter {
         this.joinRoles = Utils.parseRoleList(this.integration.getGuild(),
                 this.integration.getConfig().linking.joinRoles);
         this.allowMixedAccountTypesBypass = Utils.parseRoleList(this.integration.getGuild(),
-                this.integration.getConfig().integrations.floodgate.allowMixedAccountTypesBypass);
+                this.integration.getConfig().integrations.floodgate.allowLinkingMixedAccountTypesBypass);
+        this.allowJoiningMixedAccountTypesBypass = Utils.parseRoleList(this.integration.getGuild(),
+                this.integration.getConfig().integrations.floodgate.allowJoiningMixedAccountTypesBypass);
     }
 
     public Stream<PlayerLink> getAllLinks() {
@@ -103,13 +107,16 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public boolean canJoin(UUID playerId) {
+        // always joinable if no linking
         if (!this.integration.getConfig().linking.enableLinking) {
             return true;
         }
+
         Optional<Member> member = this.getDiscordOf(playerId);
         if (member.isEmpty()) {
             return false;
         }
+        // check requirements
         if (!this.isAllowedToJoin(member.get())) {
             return false;
         }
@@ -170,7 +177,7 @@ public class LinkManager extends ListenerAdapter {
             PlayerLink link = existing.get();
 
             if (this.isMixedAlt(link, linkRequest.get())) {
-                return this.integration.getConfig().integrations.floodgate.mixedAccountTypeDenyMessage;
+                return this.integration.getConfig().integrations.floodgate.linkingMixedAccountTypesDenyMessage;
             }
 
             if (this.reachedMaxAlts(link)) {
@@ -188,7 +195,7 @@ public class LinkManager extends ListenerAdapter {
 
     // also returns false if is mixed alt but bypasses or mixed accounts are allowed
     private boolean isMixedAlt(PlayerLink playerLink, LinkRequest linkRequest) {
-        if (this.integration.getConfig().integrations.floodgate.allowMixedAccountTypes) {
+        if (this.integration.getConfig().integrations.floodgate.allowLinkingMixedAccountTypes) {
             return false;
         }
 
@@ -345,5 +352,9 @@ public class LinkManager extends ListenerAdapter {
         if (!this.isAllowedToJoin(event.getMember())) {
             this.kickAccounts(event.getMember(), this.getJoinError(event.getMember()));
         }
+    }
+
+    public List<Role> getAllowJoiningMixedAccountTypesBypass() {
+        return allowJoiningMixedAccountTypesBypass;
     }
 }

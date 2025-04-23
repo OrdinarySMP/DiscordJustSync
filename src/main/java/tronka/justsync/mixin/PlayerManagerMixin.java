@@ -20,14 +20,20 @@ public class PlayerManagerMixin {
     @Inject(method = "checkCanJoin", at = @At("HEAD"), cancellable = true)
     private void canJoin(SocketAddress address, GameProfile profile, CallbackInfoReturnable<Text> cir) {
         JustSyncApplication integration = JustSyncApplication.getInstance();
-        if (integration.getLinkManager().canJoin(profile.getId())) {
-            return;
-        }
-
         if (!integration.isReady()) {
             cir.setReturnValue(Text.of("DiscordJS not ready, please try again in a few seconds."));
             return;
         }
+        if (!integration.getFloodgateIntegration().canJoinMixedAccountType(profile.getId())) {
+            cir.setReturnValue(Text.of(
+                integration.getConfig().integrations.floodgate.joiningMixedAccountTypesKickMessage));
+            return;
+        }
+
+        if (integration.getLinkManager().canJoin(profile.getId())) {
+            return;
+        }
+
 
         cir.setReturnValue(Text.of(integration.getLinkManager().getJoinError(profile)));
     }
