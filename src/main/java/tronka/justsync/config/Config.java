@@ -279,6 +279,8 @@ public class Config {
 
             @TomlComment("Groups to assign to minecraft accounts that are alts")
             public List<String> altGroups = new ArrayList<>();
+            @TomlComment("If a discord member has the specified role they will be given the specified groups")
+            public Map<String, List<String>> syncedRoles = Map.of("0123456789", List.of("some.group"));
         }
     }
 

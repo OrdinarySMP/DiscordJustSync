@@ -95,12 +95,13 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
             this.jda.addEventListener(new DiscordCommandHandler(this));
             this.jda.addEventListener(this.chatBridge = new ChatBridge(this));
             this.jda.addEventListener(this.consoleBridge = new ConsoleBridge(this));
-            this.jda.addEventListener(this.linkManager = new LinkManager(this));
+            this.linkManager = new LinkManager(this);
             this.jda.addEventListener(this.timeoutManager = new TimeoutManager(this));
             this.discordLogger = new DiscordLogger(this);
             this.luckPermsIntegration = new LuckPermsIntegration(this);
             this.vanishIntegration = new VanishIntegration(this);
             this.floodgateIntegration = new FloodgateIntegration(this);
+            this.jda.addEventListener(new DiscordEvents(this));
             this.registerConfigReloadHandler(this::onConfigReloaded);
         } catch (Exception e) {
             LOGGER.error("failed to initialize Discord Just Sync! Please report this crash on github or our discord server!", e);

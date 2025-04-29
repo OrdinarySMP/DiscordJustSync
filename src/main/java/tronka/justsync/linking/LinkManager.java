@@ -32,7 +32,7 @@ import tronka.justsync.Utils;
 import tronka.justsync.compat.FloodgateIntegration;
 import tronka.justsync.config.Config;
 
-public class LinkManager extends ListenerAdapter {
+public class LinkManager {
 
     private static final int PURGE_LIMIT = 30;
     private static final Random RANDOM = new Random();
@@ -46,7 +46,7 @@ public class LinkManager extends ListenerAdapter {
     private List<Role> allowJoiningMixedAccountTypesBypass;
 
 
-	public LinkManager(JustSyncApplication integration) {
+    public LinkManager(JustSyncApplication integration) {
         this.integration = integration;
         integration.registerConfigReloadHandler(this::onConfigLoaded);
     }
@@ -157,7 +157,7 @@ public class LinkManager extends ListenerAdapter {
         return this.getJoinError(member.get());
     }
 
-    private String getJoinError(Member member) {
+    public String getJoinError(Member member) {
         if (member.isTimedOut()) {
             return this.integration.getConfig().kickMessages.kickTimedOut;
         }
@@ -304,13 +304,8 @@ public class LinkManager extends ListenerAdapter {
         this.linkData.removePlayerLink(link);
     }
 
-    @Override
-    public void onGuildMemberRemove(GuildMemberRemoveEvent event) {
-        Member member = event.getMember();
-        if (member == null) {
-            return;
-        }
 
+    public void onMemberRemoved(Member member) {
         this.kickAccounts(member, this.integration.getConfig().kickMessages.kickOnLeave);
         if (this.unlinkPlayer(member.getIdLong())) {
             LOGGER.info("Removed link of \"{}\" because they left the guild.", member.getEffectiveName());
@@ -345,13 +340,6 @@ public class LinkManager extends ListenerAdapter {
         link.removeAlt(altUuid);
         this.integration.getDiscordLogger().onUnlinkAlt(altUuid);
         this.integration.getLuckPermsIntegration().unsetAlt(altUuid);
-    }
-
-    @Override
-    public void onGuildMemberUpdate(GuildMemberUpdateEvent event) {
-        if (!this.isAllowedToJoin(event.getMember())) {
-            this.kickAccounts(event.getMember(), this.getJoinError(event.getMember()));
-        }
     }
 
     public List<Role> getAllowJoiningMixedAccountTypesBypass() {

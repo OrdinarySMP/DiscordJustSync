@@ -31,7 +31,10 @@ import org.slf4j.Logger;
 import tronka.justsync.chat.TextReplacer;
 import tronka.justsync.config.Config;
 
-public class Utils {
+public final class Utils {
+
+    private Utils() {
+    }
 
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Gson gson = new Gson();
@@ -39,16 +42,16 @@ public class Utils {
         "https?://[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b[-a-zA-Z0-9()@:%_+.~#?&/=]*");
 
     private static final Pattern SHARED_LOCATION_PATTERN =
-            Pattern.compile("^(?:\\s?)+\\[x:(-?\\d+), y:(-?\\d+), z:(-?\\d+)]$");
+        Pattern.compile("^(?:\\s?)+\\[x:(-?\\d+), y:(-?\\d+), z:(-?\\d+)]$");
     private static final Pattern SHARED_WAYPOINT_PATTERN =
-            Pattern.compile("^(?:\\s?)+\\[name:(.*?), x:(-?\\d+), y:(-?\\d+), z:(-?\\d+), dim:minecraft:(?:\\w+_)?(\\w+)(?:, icon:\\w+)?\\]$");
+        Pattern.compile(
+            "^(?:\\s?)+\\[name:(.*?), x:(-?\\d+), y:(-?\\d+), z:(-?\\d+), dim:minecraft:(?:\\w+_)?(\\w+)(?:, icon:\\w+)?\\]$");
     private static final Map<RegistryKey<World>, String> DIMENSION_MAP =
-            Map.of(
-                World.OVERWORLD, "Overworld",
-                World.NETHER, "Nether",
-                World.END, "End"
-            );
-
+        Map.of(
+            World.OVERWORLD, "Overworld",
+            World.NETHER, "Nether",
+            World.END, "End"
+        );
 
 
     public static List<Role> parseRoleList(Guild guild, List<String> roleIds) {
@@ -57,20 +60,24 @@ public class Utils {
             return roles;
         }
         for (String roleId : roleIds) {
-            Role role = guild.getRoleById(roleId);
-            if (role == null) {
-                Optional<Role> namedRole = guild.getRoles().stream()
-                    .filter(r -> r.getName().equals(roleId))
-                    .findFirst();
-                if (namedRole.isEmpty()) {
-                    LOGGER.warn("Could not find role with id \"{}\"", roleId);
-                    continue;
-                }
-                role = namedRole.get();
-            }
-            roles.add(role);
+            parseRole(guild, roleId).ifPresent(roles::add);
         }
         return roles;
+    }
+
+    public static Optional<Role> parseRole(Guild guild, String roleId) {
+        Role role = guild.getRoleById(roleId);
+        if (role != null) {
+            return Optional.of(role);
+        }
+        Optional<Role> namedRole = guild.getRoles().stream()
+            .filter(r -> r.getName().equals(roleId))
+            .findFirst();
+        // don't warn for example role
+        if (namedRole.isEmpty() && !roleId.equals("0123456789")) {
+            LOGGER.warn("Could not find role with id \"{}\"", roleId);
+        }
+        return namedRole;
     }
 
     public static TextChannel getTextChannel(JDA jda, String id, String debugName) {
@@ -108,10 +115,11 @@ public class Utils {
         }
         try {
             return fetchProfileData("https://api.mojang.com/users/profiles/minecraft/" + name);
-        } catch (IOException ignored) {}
+        } catch (IOException ignored) {
+        }
         try {
             return fetchProfileData("https://api.minetools.eu/uuid/" + name);
-        } catch (IOException e){
+        } catch (IOException e) {
             return null;
         }
     }
@@ -123,7 +131,7 @@ public class Utils {
         connection.addRequestProperty("Accept", "application/json");
         connection.connect();
         BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(connection.getInputStream()));
+            new InputStreamReader(connection.getInputStream()));
         String data = reader.lines().collect(Collectors.joining());
         if (data.endsWith("\"ERR\"}")) {
             return null;
@@ -166,7 +174,7 @@ public class Utils {
     }
 
     public static String formatVoxel(
-            String message, Config config, ServerPlayerEntity player) {
+        String message, Config config, ServerPlayerEntity player) {
         if (!message.contains("[x:") && !message.contains("[name:")) {
             return message;
         }
@@ -184,25 +192,23 @@ public class Utils {
         return message;
     }
 
-    private static String formatSharedLocationVoxel(
-            Matcher matcher, Config config, ServerPlayerEntity player) {
+    private static String formatSharedLocationVoxel(Matcher matcher, Config config, ServerPlayerEntity player) {
         String x = matcher.group(1);
         String y = matcher.group(2);
         String z = matcher.group(3);
         String dim = DIMENSION_MAP.getOrDefault(
-                        player.getWorld().getRegistryKey(), "Unknown");
+            player.getWorld().getRegistryKey(), "Unknown");
 
         return replacePlaceholdersWaypoint("Shared Location", "S", dim, x, y, z, config);
     }
 
-    private static String formatSharedWaypointVoxel(
-            Matcher matcher, Config config) {
+    private static String formatSharedWaypointVoxel(Matcher matcher, Config config) {
         String name = matcher.group(1);
         String x = matcher.group(2);
         String y = matcher.group(3);
         String z = matcher.group(4);
         String dim = matcher.group(5).substring(0, 1).toUpperCase()
-                + matcher.group(5).substring(1);
+            + matcher.group(5).substring(1);
 
         return replacePlaceholdersWaypoint(name,
             name.substring(0, 1).toUpperCase(), dim, x, y, z, config);
@@ -218,7 +224,6 @@ public class Utils {
             return message;
         }
 
-
         int x, y, z;
         try {
             x = Integer.parseInt(messageParts.get(3));
@@ -229,7 +234,7 @@ public class Utils {
         }
 
         String dimension = messageParts.get(9).contains("overworld") ? "Overworld" :
-                           messageParts.get(9).contains("nether") ? "Nether" : "End";
+            messageParts.get(9).contains("nether") ? "Nether" : "End";
 
         return replacePlaceholdersWaypoint(messageParts.get(1),
             messageParts.get(2), dimension, Integer.toString(x),
@@ -238,18 +243,18 @@ public class Utils {
 
 
     private static String replacePlaceholdersWaypoint(
-            String name, String abbr, String dim,
-            String x, String y, String z, Config config) {
+        String name, String abbr, String dim,
+        String x, String y, String z, Config config) {
         String returnMessage = config.messages.waypointFormat;
         if (!config.waypoints.mapURLs.getOrDefault(dim, "").isEmpty()) {
             name = String.format("[%s](<%s>)", name, config.waypoints.mapURLs.get(dim));
         }
         return returnMessage.replace("%name%", name)
-                    .replace("%abbr%", abbr)
-                    .replace("%dimension%", dim)
-                    .replaceAll("%x%", x)
-                    .replaceAll("%y%", y)
-                    .replaceAll("%z%", z);
+            .replace("%abbr%", abbr)
+            .replace("%dimension%", dim)
+            .replaceAll("%x%", x)
+            .replaceAll("%y%", y)
+            .replaceAll("%z%", z);
     }
 
     public static String replaceFormattingCode(String str, String replacement) {
