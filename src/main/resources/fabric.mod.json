@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "discordjustsync",
+  "id": "discord-justsync",
   "version": "${version}",
   "name": "Discord: JustSync",
   "description": "",
