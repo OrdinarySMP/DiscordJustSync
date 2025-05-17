@@ -38,7 +38,7 @@ public class ChatBridge extends ListenerAdapter {
         this.integration = integration;
         ServerLifecycleEvents.SERVER_STOPPING.register(this::onServerStopping);
         integration.registerConfigReloadHandler(this::onConfigLoaded);
-        this.sendMessageToDiscord(integration.getConfig().messages.startMessage, null);
+        this.sendMessageToDiscord(integration.getConfig().messages.startMessage, null, null);
     }
 
     private void onConfigLoaded(Config config) {
@@ -127,13 +127,13 @@ public class ChatBridge extends ListenerAdapter {
 
     public void onPlayerJoin(ServerPlayerEntity player, boolean vanish) {
         this.sendMessageToDiscord(this.integration.getConfig().messages.playerJoinMessage.replace("%user%",
-            Utils.escapeUnderscores(player.getName().getString())), null);
+            Utils.escapeUnderscores(player.getName().getString())), null, player);
         this.updateRichPresence(vanish ? 0 : 1);
     }
 
     public void onPlayerTimeOut(ServerPlayerEntity player) {
         this.sendMessageToDiscord(this.integration.getConfig().messages.playerTimeOutMessage.replace("%user%",
-                Utils.escapeUnderscores(player.getName().getString())), null);
+                Utils.escapeUnderscores(player.getName().getString())), null, player);
         this.updateRichPresence(-1);
     }
 
@@ -147,7 +147,7 @@ public class ChatBridge extends ListenerAdapter {
         }
 
         this.sendMessageToDiscord(this.integration.getConfig().messages.playerLeaveMessage.replace("%user%",
-            Utils.escapeUnderscores(player.getName().getString())), null);
+            Utils.escapeUnderscores(player.getName().getString())), null, player);
         this.updateRichPresence(vanish ? 0 : -1);
     }
 
@@ -178,7 +178,7 @@ public class ChatBridge extends ListenerAdapter {
             if (message.equals("death.attack.badRespawnPoint")) {
                 message = "%s was killed by [Intentional Mod Design]".formatted(player.getName().getString());
             }
-            this.sendMessageToDiscord(Utils.escapeUnderscores(message), null);
+            this.sendMessageToDiscord(Utils.escapeUnderscores(message), null, player);
         }
     }
 
@@ -187,7 +187,7 @@ public class ChatBridge extends ListenerAdapter {
             this.sendMessageToDiscord(this.integration.getConfig().messages.advancementMessage.replace("%user%",
                     Utils.escapeUnderscores(player.getName().getString()))
                 .replace("%title%", advancement.getTitle().getString())
-                .replace("%description%", advancement.getDescription().getString()), null);
+                .replace("%description%", advancement.getDescription().getString()), null, player);
         }
     }
 
@@ -196,7 +196,7 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     private void onServerStopping(MinecraftServer minecraftServer) {
-        this.sendMessageToDiscord(this.integration.getConfig().messages.stopMessage, null);
+        this.sendMessageToDiscord(this.integration.getConfig().messages.stopMessage, null, null);
         this.stopped = true;
     }
 
@@ -206,11 +206,14 @@ public class ChatBridge extends ListenerAdapter {
             message = Utils.formatXaero(message, this.integration.getConfig());
             message = Utils.formatVoxel(message, this.integration.getConfig(), player);
         }
-        this.sendMessageToDiscord(message, player);
+        this.sendMessageToDiscord(message, player, player);
     }
 
-    private void sendMessageToDiscord(String message, ServerPlayerEntity sender) {
+    private void sendMessageToDiscord(String message, ServerPlayerEntity sender, ServerPlayerEntity connectedPlayer) {
         if (message.trim().isEmpty()) {
+            return;
+        }
+        if (connectedPlayer != null && this.integration.getVanishIntegration().isVanished(connectedPlayer)) {
             return;
         }
         if (this.messageSender == null || this.messageSender.hasChanged(message, sender)) {
@@ -247,6 +250,6 @@ public class ChatBridge extends ListenerAdapter {
         } else {
             message = prefix + data;
         }
-        this.sendMessageToDiscord(message, sender);
+        this.sendMessageToDiscord(message, sender, sender);
     }
 }
