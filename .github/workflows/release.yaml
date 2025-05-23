@@ -56,7 +56,7 @@ jobs:
           minecraft_version=$(grep "^minecraft_version=" "gradle.properties" | cut -d'=' -f2)
           echo "MINECRAFT_VERSION=$minecraft_version" >> $GITHUB_ENV
       - name: Upload to Modrinth
-        uses: cloudnode-pro/modrinth-publish@2.0.0
+        uses: cloudnode-pro/modrinth-publish@v2
         with:
           token: ${{ secrets.MODRINTH_TOKEN }}
           project: ${{ secrets.MODRINTH_PROJECT_ID }}
