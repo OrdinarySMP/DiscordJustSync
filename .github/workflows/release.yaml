@@ -24,6 +24,7 @@ jobs:
         id: semantic-release-dry
         with:
           dry_run: true
+          semantic_version: 24.2.3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -84,6 +85,7 @@ jobs:
         uses: cycjimmy/semantic-release-action@v4
         id: semantic-release
         with:
+          semantic_version: 24.2.3
           extra_plugins: |
             @semantic-release/git
             @semantic-release/github
@@ -95,7 +97,7 @@ jobs:
           echo "MINECRAFT_VERSION=$minecraft_version" >> $GITHUB_ENV
       - name: Upload to Modrinth
         if: steps.semantic-release.outputs.new_release_version != ''
-        uses: cloudnode-pro/modrinth-publish@2.0.0
+        uses: cloudnode-pro/modrinth-publish@v2
         with:
           token: ${{ secrets.MODRINTH_TOKEN }}
           project: ${{ secrets.MODRINTH_PROJECT_ID }}
