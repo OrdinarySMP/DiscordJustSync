@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.minecraft.server.command.ServerCommandSource;
+import tronka.justsync.chat.DiscordChatMessageSender;
 import tronka.justsync.config.Config;
 
 public class ConsoleBridge extends ListenerAdapter {
@@ -23,6 +24,7 @@ public class ConsoleBridge extends ListenerAdapter {
     private TextChannel commandChannel;
     private Role opRole;
     private List<LogRedirect> logRedirects;
+    private DiscordChatMessageSender messageSender;
 
     public ConsoleBridge(JustSyncApplication integration) {
         this.integration = integration;
@@ -30,8 +32,17 @@ public class ConsoleBridge extends ListenerAdapter {
     }
 
     private void onConfigLoaded(Config config) {
-        this.commandLogChannel = Utils.getTextChannel(this.integration.getJda(), config.commands.commandLogChannel, "commandLogChannel");
-        this.commandChannel = Utils.getTextChannel(this.integration.getJda(), config.commands.commandChannel, "commandChannel");
+        this.commandLogChannel =
+                Utils.getTextChannel(
+                        this.integration.getJda(),
+                        config.commands.commandLogChannel,
+                        "commandLogChannel");
+        this.commandChannel =
+                Utils.getTextChannel(
+                        this.integration.getJda(),
+                        config.commands.commandChannel,
+                        "commandChannel");
+        this.messageSender = null;
         String opRoleId = this.integration.getConfig().commands.opRole;
         if (this.commandChannel != null && !opRoleId.isEmpty()) {
             this.opRole = this.commandChannel.getGuild().getRoleById(opRoleId);
@@ -40,13 +51,20 @@ public class ConsoleBridge extends ListenerAdapter {
         }
         this.logRedirects = new ArrayList<>();
         for (Config.LogRedirectChannel logRedirectChannel : config.commands.logRedirectChannels) {
-            TextChannel channel = Utils.getTextChannel(this.integration.getJda(), logRedirectChannel.channel, "logRedirectChannel");
+            TextChannel channel =
+                    Utils.getTextChannel(
+                            this.integration.getJda(),
+                            logRedirectChannel.channel,
+                            "logRedirectChannel");
             if (channel != null) {
-                this.logRedirects.add(new LogRedirect(channel, logRedirectChannel.redirectPrefixes));
+                this.logRedirects.add(
+                        new LogRedirect(channel, logRedirectChannel.redirectPrefixes));
             } else {
                 LogUtils.getLogger()
-                    .info("Could not load log redirect: ID: \"{}\", redirects: [{}]", logRedirectChannel.channel,
-                        String.join(", ", logRedirectChannel.redirectPrefixes));
+                        .info(
+                                "Could not load log redirect: ID: \"{}\", redirects: [{}]",
+                                logRedirectChannel.channel,
+                                String.join(", ", logRedirectChannel.redirectPrefixes));
             }
         }
     }
@@ -59,8 +77,9 @@ public class ConsoleBridge extends ListenerAdapter {
             return;
         }
 
-        if (source.getEntity() == null && !source.getName().equals("Server")
-            && !this.integration.getConfig().commands.logCommandBlockCommands) {
+        if (source.getEntity() == null
+                && !source.getName().equals("Server")
+                && !this.integration.getConfig().commands.logCommandBlockCommands) {
             return;
         }
 
@@ -74,8 +93,20 @@ public class ConsoleBridge extends ListenerAdapter {
                 break;
             }
         }
-        target.sendMessage(this.integration.getConfig().messages.commandExecutedInfoText.replace("%user%",
-            Utils.escapeUnderscores(source.getName())).replace("%cmd%", command)).queue();
+        String message =
+                this.integration
+                        .getConfig()
+                        .messages
+                        .commandExecutedInfoText
+                        .replace("%user%", Utils.escapeUnderscores(source.getName()))
+                        .replace("%cmd%", command);
+
+        if (this.messageSender == null || this.messageSender.hasChanged(message, null)) {
+            this.messageSender =
+                    new DiscordChatMessageSender(
+                            null, target, this.integration.getConfig(), message, null);
+        }
+        this.messageSender.sendMessage();
     }
 
     @Override
