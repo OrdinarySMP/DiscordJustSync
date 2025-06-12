@@ -1,0 +1,15 @@
+plugins {
+    id 'java'
+}
+
+group = rootProject.group
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Only core dependencies, e.g.:
+    // implementation 'some:core-library:version'
+}
+

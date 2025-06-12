@@ -1,171 +1,47 @@
 plugins {
-    id 'fabric-loom' version '1.10-SNAPSHOT'
-    id 'maven-publish'
-    id 'com.github.johnrengelman.shadow' version "8+"
+    // Only apply plugins here if they are truly global (rare for multi-projects)
 }
 
-group = project.maven_group
+subprojects {
+    apply plugin: 'java'
 
-base {
-    archivesName = project.archives_base_name
-}
-
-loom {
-    splitEnvironmentSourceSets()
-
-    mods {
-        "discordjustsync" {
-            sourceSet sourceSets.main
-            sourceSet sourceSets.client
-        }
-    }
-}
-
-repositories {
-    // Add repositories to retrieve artifacts from in here.
-    // You should only use this when depending on other mods because
-    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
-    // for more information about repositories.
-    mavenCentral()
-    maven { url "https://api.modrinth.com/maven" }
-    maven {
-        url "https://maven.nucleoid.xyz/"
-        name "Nucleoid"
-    }
-    maven {
-        url = uri("https://repo.opencollab.dev/main/")
-    }
-    maven { url 'https://jitpack.io' }
-}
-
-configurations {
-    embed
-    compileOnly.extendsFrom(embed)
-}
-
-shadowJar {
-    configurations = [project.configurations.embed]
-    exclude('META-INF/services/**')
-    relocate 'okhttp3', 'dcshadow.okhttp'
-    relocate 'okio', 'dcshadow.okio'
-    relocate 'club.minnced', 'dcshadow.club.minnced'
-    relocate 'com.sun', 'dcshadow.com.sun'
-    relocate 'com.iwebpp', 'dcshadow.com.iwebpp'
-    relocate 'com.neovisionaries', 'dcshadow.com.neovisionaries'
-    relocate 'gnu', 'dcshadow.gnu'
-    relocate 'org.apache.commons.collections4', 'dcshadow.org.apache.commons.collections4'
-    relocate('org.apache.commons.lang3', 'dcshadow.org.apache.commons.lang3')
-    relocate 'org.json', 'dcshadow.org.json'
-    relocate 'org.intellij', 'dcshadow.org.intellij'
-    relocate 'org.jetbrains', 'dcshadow.org.jetbrains'
-    relocate 'tomp2p', 'dcshadow.tomp2p'
-    relocate 'com.fasterxml', 'dcshadow.com.fasterxml'
-    relocate 'dev.vankka', 'dcshadow.dev.vankka'
-    relocate 'net.kyori', 'dcshadow.net.kyori'
-    relocate 'org.checkerframework', 'dcshadow.org.checkerframework'
-    relocate "com.moandjiezana", "dcshadow.com.moandjiezana"
-    relocate "ch.lambdaj", "dcshadow.ch.lambdaj"
-    relocate "emoji4j", "dcshadow.emoji4j"
-    relocate "javax.annotation", "dcshadow.javax.annotation"
-    relocate "net.sf", "dcshadow.net.sf"
-    relocate "org.hamcrest", "dcshadow.org.hamcrest"
-    relocate "org.objenesis", "dcshadow.org.objenesis"
-    relocate "kotlin", "dcshadow.kotlin"
-    relocate "com.vdurmont", "dcshadow.com.vdurmont"
-    relocate "com.google.gson", "dcshadow.com.google.gson"
-}
-
-dependencies {
-    // To change the versions see the gradle.properties file
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    include(modImplementation('me.lucko:fabric-permissions-api:0.3.3'))
-
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-
-    embed implementation("net.dv8tion:JDA:5.3.2") {
-        exclude module: "opus-java"
-    }
-
-    embed implementation('club.minnced:discord-webhooks:0.8.4')
-    embed implementation("de.erdbeerbaerlp:toml4j:dd60f51")
-    compileOnly 'net.luckperms:api:5.4'
-    compileOnly('org.geysermc.floodgate:api:2.2.4-SNAPSHOT')
-    modCompileOnly "maven.modrinth:vanish:1.5.13+1.21.5"
-    modImplementation("eu.pb4:placeholder-api:2.5.2+1.21.3")
-}
-tasks.build.dependsOn(tasks.shadowJar)
-
-processResources {
-    inputs.property "version", project.version
-    inputs.property "minecraft_version", project.minecraft_version
-    inputs.property "loader_version", project.loader_version
-    filteringCharset "UTF-8"
-
-    filesMatching("fabric.mod.json") {
-        expand "version": project.version,
-                "minecraft_version": project.minecraft_version,
-                "loader_version": project.loader_version
-    }
-}
-
-def targetJavaVersion = 21
-tasks.withType(JavaCompile).configureEach {
-    // ensure that the encoding is set to UTF-8, no matter what the system default is
-    // this fixes some edge cases with special characters not displaying correctly
-    // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
-    // If Javadoc is generated, this must be specified in that task too.
-    it.options.encoding = "UTF-8"
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-        it.options.release.set(targetJavaVersion)
-    }
-}
-
-java {
-    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-    if (JavaVersion.current() < javaVersion) {
-        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
-    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-    // if it is present.
-    // If you remove this line, sources will not be generated.
-    withSourcesJar()
-}
-
-jar {
-    from("LICENSE") {
-        rename { "${it}_${project.archivesBaseName}" }
-    }
-}
-
-remapJar {
-    // wait until the shadowJar is done
-    dependsOn(shadowJar)
-    mustRunAfter(shadowJar)
-    // Set the input jar for the task. Here use the shadow Jar that include the .class of the transitive dependency
-    inputFile = file(shadowJar.archiveFile)
-}
-
-artifacts {
-    archives tasks.shadowJar
-}
-
-// configure the maven publication
-publishing {
-    publications {
-        create("mavenJava", MavenPublication) {
-            artifactId = project.archives_base_name
-            from components.java
-        }
-    }
-
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
     repositories {
-        // Add repositories to publish to here.
-        // Notice: This block does NOT have the same function as the block in the top level.
-        // The repositories here will be used for publishing your artifact, not for
-        // retrieving dependencies.
+        mavenCentral()
+        maven { url "https://api.modrinth.com/maven" }
+        maven { url "https://maven.nucleoid.xyz/" }
+        maven { url = uri("https://repo.opencollab.dev/main/") }
+        maven { url 'https://jitpack.io' }
+    }
+
+    base {
+        archivesName = "$rootProject.archives_base_name-$project.name"
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = "UTF-8"
+        options.release.set(21)
+    }
+
+    java {
+        toolchain.languageVersion = JavaLanguageVersion.of(21)
+        withSourcesJar()
+    }
+
+    afterEvaluate { subproject ->
+        if (subproject.name in ['fabric', 'forge', 'paper']) {
+            def includedModule = rootProject.findProperty('includeModule')
+            if (includedModule && project(":${includedModule}").projectDir.exists()) {
+                subproject.dependencies {
+                    println "Module selected: ${includedModule}"
+                    embed project(":${includedModule}")
+                }
+            } else {
+                subproject.dependencies {
+                    println "Default module selected: discord"
+                    embed project(":discord")
+                }
+            }
+        }
     }
 }
+

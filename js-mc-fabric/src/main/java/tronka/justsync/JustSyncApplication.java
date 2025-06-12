@@ -4,6 +4,8 @@ import com.mojang.logging.LogUtils;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -57,6 +59,16 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
 
     @Override
     public void onInitializeServer() {
+
+        ServiceLoader<RandomInterface> loader = ServiceLoader.load(RandomInterface.class);
+        Optional<RandomInterface> impl = loader.findFirst();
+
+        if (impl.isPresent()) {
+            impl.get().run();
+        } else {
+            System.out.println("NOT FOUND");
+        }
+
         instance = this;
         if (this.config.botToken == null || this.config.botToken.length() < 20) {
             throw new RuntimeException("Please enter a valid bot token in the Discord-JS config file in " + getConfigFolder().toAbsolutePath());

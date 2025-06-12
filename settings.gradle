@@ -7,3 +7,6 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+
+rootProject.name = 'justsync'
+include('core', 'fabric', 'discord', 'forge', 'matrix')

@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+}
+
+group = rootProject.group
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    embed
+    compileOnly.extendsFrom(embed)
+}
+
+dependencies {
+    implementation project(':core')
+    embed implementation("net.dv8tion:JDA:5.3.2") {
+        exclude module: "opus-java"
+    }
+    embed implementation('club.minnced:discord-webhooks:0.8.4')
+}
+
