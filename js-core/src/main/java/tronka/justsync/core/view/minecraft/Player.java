@@ -1,3 +1,8 @@
 package tronka.justsync.core.view.minecraft;
 
-public interface Player {}
+import java.util.UUID;
+
+public interface Player {
+    UUID getID();
+    String getName();
+}
