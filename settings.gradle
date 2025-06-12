@@ -9,4 +9,11 @@ pluginManagement {
 }
 
 rootProject.name = 'justsync'
-include('core', 'fabric', 'discord', 'forge', 'matrix')
+include('core', 'fabric', 'discord', 'forge', 'matrix', 'quilt', 'paper')
+project(':discord').projectDir = file('js-chat-discord')
+project(':matrix').projectDir = file('js-chat-matrix')
+project(':core').projectDir = file('js-core')
+project(':fabric').projectDir = file('js-mc-fabric')
+project(':forge').projectDir = file('js-mc-forge')
+project(':quilt').projectDir = file('js-mc-quilt')
+project(':paper').projectDir = file('js-mc-paper')
