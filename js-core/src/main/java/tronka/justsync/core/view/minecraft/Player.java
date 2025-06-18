@@ -2,10 +2,8 @@ package tronka.justsync.core.view.minecraft;
 
 import java.util.UUID;
 
-/**
- * Abstracted view of a player, should implement equals
- */
-public interface Player {
-    UUID getID();
-    String getName();
+public abstract class Player {
+    public abstract UUID getID();
+    public abstract String getName();
+    public abstract boolean equals(Player player);
 }
