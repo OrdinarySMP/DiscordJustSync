@@ -15,9 +15,10 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
+import tronka.justsync.core.view.linking.LinkData;
+import tronka.justsync.core.view.linking.PlayerLink;
 
 public class JsonLinkData implements LinkData {
-
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private static final Logger LOGGER = LogUtils.getLogger();
     private final File file;
@@ -30,12 +31,16 @@ public class JsonLinkData implements LinkData {
             return;
         }
         try (FileReader reader = new FileReader(file)) {
-            this.links = gson.fromJson(reader, new TypeToken<ArrayList<PlayerLink>>() {
-            });
+            this.links = gson.fromJson(reader, new TypeToken<ArrayList<PlayerLink>>() {});
         } catch (JsonSyntaxException ex) {
-            throw new RuntimeException("Cannot parse player links, did you tamper with the file? (%s) Please restore a valid json and reload or all links might be lost!".formatted(file.getAbsolutePath()), ex);
+            throw new RuntimeException(
+                ("Cannot parse player links, did you tamper with the file? (%s) Please restore a "
+                    + "valid json and reload or all links might be lost!")
+                    .formatted(file.getAbsolutePath()),
+                ex);
         } catch (Exception e) {
-            throw new RuntimeException("Cannot load player links (%s)".formatted(file.getAbsolutePath()), e);
+            throw new RuntimeException(
+                "Cannot load player links (%s)".formatted(file.getAbsolutePath()), e);
         }
         if (this.links == null) {
             // gson failed to parse a valid list
@@ -51,7 +56,9 @@ public class JsonLinkData implements LinkData {
 
     @Override
     public Optional<PlayerLink> getPlayerLink(UUID playerId) {
-        return this.links.stream().filter(link -> playerId.equals(link.getPlayerId()) || link.hasAlt(playerId)).findFirst();
+        return this.links.stream()
+            .filter(link -> playerId.equals(link.getPlayerId()) || link.hasAlt(playerId))
+            .findFirst();
     }
 
     @Override

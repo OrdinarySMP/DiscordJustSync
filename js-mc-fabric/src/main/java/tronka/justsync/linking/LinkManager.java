@@ -2,7 +2,6 @@ package tronka.justsync.linking;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.logging.LogUtils;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -14,26 +13,23 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberUpdateEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-
 import org.slf4j.Logger;
 import tronka.justsync.JustSyncApplication;
 import tronka.justsync.Utils;
 import tronka.justsync.compat.FloodgateIntegration;
 import tronka.justsync.config.Config;
+import tronka.justsync.core.view.linking.LinkData;
+import tronka.justsync.core.view.linking.PlayerData;
+import tronka.justsync.core.view.linking.PlayerLink;
 
 public class LinkManager {
-
     private static final int PURGE_LIMIT = 30;
     private static final Random RANDOM = new Random();
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -45,24 +41,25 @@ public class LinkManager {
     private List<Role> allowMixedAccountTypesBypass;
     private List<Role> allowJoiningMixedAccountTypesBypass;
 
-
     public LinkManager(JustSyncApplication integration) {
         this.integration = integration;
         integration.registerConfigReloadHandler(this::onConfigLoaded);
     }
 
     private void onConfigLoaded(Config config) {
-        this.linkData = JsonLinkData.from(
-                JustSyncApplication.getConfigFolder().resolve(JustSyncApplication.ModId + ".player-links.json")
-                        .toFile());
-        this.requiredRoles = Utils.parseRoleList(this.integration.getGuild(),
-                this.integration.getConfig().linking.requiredRoles);
-        this.joinRoles = Utils.parseRoleList(this.integration.getGuild(),
-                this.integration.getConfig().linking.joinRoles);
+        this.linkData = JsonLinkData.from(JustSyncApplication.getConfigFolder()
+                .resolve(JustSyncApplication.ModId + ".player-links.json")
+                .toFile());
+        this.requiredRoles = Utils.parseRoleList(
+            this.integration.getGuild(), this.integration.getConfig().linking.requiredRoles);
+        this.joinRoles = Utils.parseRoleList(
+            this.integration.getGuild(), this.integration.getConfig().linking.joinRoles);
         this.allowMixedAccountTypesBypass = Utils.parseRoleList(this.integration.getGuild(),
-                this.integration.getConfig().integrations.floodgate.allowLinkingMixedAccountTypesBypass);
+            this.integration.getConfig()
+                .integrations.floodgate.allowLinkingMixedAccountTypesBypass);
         this.allowJoiningMixedAccountTypesBypass = Utils.parseRoleList(this.integration.getGuild(),
-                this.integration.getConfig().integrations.floodgate.allowJoiningMixedAccountTypesBypass);
+            this.integration.getConfig()
+                .integrations.floodgate.allowJoiningMixedAccountTypesBypass);
     }
 
     public Stream<PlayerLink> getAllLinks() {
@@ -120,7 +117,8 @@ public class LinkManager {
         if (!this.isAllowedToJoin(member.get())) {
             return false;
         }
-        return !this.integration.getConfig().linking.disallowTimeoutMembersToJoin || !member.get().isTimedOut();
+        return !this.integration.getConfig().linking.disallowTimeoutMembersToJoin
+            || !member.get().isTimedOut();
     }
 
     public void onPlayerJoin(ServerPlayerEntity player) {
@@ -138,13 +136,17 @@ public class LinkManager {
             return;
         }
 
-        if (data.getPlayerId().equals(player.getUuid()) && this.integration.getConfig().linking.renameOnJoin
-                && PermissionUtil.checkPermission(this.integration.getGuild().getSelfMember(),
-                        Permission.NICKNAME_MANAGE)) {
+        if (data.getPlayerId().equals(player.getUuid())
+            && this.integration.getConfig().linking.renameOnJoin
+            && PermissionUtil.checkPermission(
+                this.integration.getGuild().getSelfMember(), Permission.NICKNAME_MANAGE)) {
             member.modifyNickname(player.getName().getString()).queue();
         }
-        if (PermissionUtil.checkPermission(this.integration.getGuild().getSelfMember(), Permission.MANAGE_ROLES)) {
-            member.getGuild().modifyMemberRoles(member, this.joinRoles, Collections.emptyList()).queue();
+        if (PermissionUtil.checkPermission(
+                this.integration.getGuild().getSelfMember(), Permission.MANAGE_ROLES)) {
+            member.getGuild()
+                .modifyMemberRoles(member, this.joinRoles, Collections.emptyList())
+                .queue();
         }
     }
 
@@ -177,7 +179,8 @@ public class LinkManager {
             PlayerLink link = existing.get();
 
             if (this.isMixedAlt(link, linkRequest.get())) {
-                return this.integration.getConfig().integrations.floodgate.linkingMixedAccountTypesDenyMessage;
+                return this.integration.getConfig()
+                    .integrations.floodgate.linkingMixedAccountTypesDenyMessage;
             }
 
             if (this.reachedMaxAlts(link)) {
@@ -190,7 +193,8 @@ public class LinkManager {
             this.linkData.addPlayerLink(new PlayerLink(linkRequest.get(), discordId));
             this.integration.getDiscordLogger().onLinkMain(linkRequest.get().getPlayerId());
         }
-        return this.integration.getConfig().linkResults.linkSuccess.replace("%name%", linkRequest.get().getName());
+        return this.integration.getConfig().linkResults.linkSuccess.replace(
+            "%name%", linkRequest.get().getName());
     }
 
     // also returns false if is mixed alt but bypasses or mixed accounts are allowed
@@ -201,7 +205,7 @@ public class LinkManager {
 
         FloodgateIntegration floodgateIntegration = this.integration.getFloodgateIntegration();
         if (floodgateIntegration.isBedrock(playerLink.getPlayerId())
-                == floodgateIntegration.isBedrock(linkRequest.getPlayerId())) {
+            == floodgateIntegration.isBedrock(linkRequest.getPlayerId())) {
             return false;
         }
         Optional<Member> member = this.getDiscordOf(playerLink);
@@ -247,12 +251,13 @@ public class LinkManager {
         }
 
         long expiryTime = System.currentTimeMillis()
-                + this.integration.getConfig().linking.linkCodeExpireMinutes * 60 * 1000;
+            + this.integration.getConfig().linking.linkCodeExpireMinutes * 60 * 1000;
         String code;
         do {
             code = String.valueOf(RANDOM.nextInt(100000, 1000000)); // 6-digit code
         } while (this.linkRequests.containsKey(code));
-        this.linkRequests.put(code, new LinkRequest(profile.getId(), profile.getName(), expiryTime));
+        this.linkRequests.put(
+            code, new LinkRequest(profile.getId(), profile.getName(), expiryTime));
         return code;
     }
 
@@ -266,8 +271,8 @@ public class LinkManager {
         }
         Set<Long> memberSet = members.stream().map(Member::getIdLong).collect(Collectors.toSet());
         List<PlayerLink> toRemove = this.linkData.getPlayerLinks()
-                .filter(link -> !memberSet.contains(link.getDiscordId()))
-                .toList();
+                                        .filter(link -> !memberSet.contains(link.getDiscordId()))
+                                        .toList();
         toRemove.forEach(this::unlinkPlayer);
         if (!toRemove.isEmpty()) {
             LOGGER.info("Purged {} linked players", toRemove.size());
@@ -295,7 +300,8 @@ public class LinkManager {
     }
 
     public void unlinkPlayer(PlayerLink link) {
-        this.tryKickPlayer(link.getPlayerId(), this.integration.getConfig().kickMessages.kickUnlinked);
+        this.tryKickPlayer(
+            link.getPlayerId(), this.integration.getConfig().kickMessages.kickUnlinked);
         for (PlayerData alt : link.getAlts()) {
             this.tryKickPlayer(alt.getId(), this.integration.getConfig().kickMessages.kickUnlinked);
             this.integration.getLuckPermsIntegration().unsetAlt(alt.getId());
@@ -304,16 +310,17 @@ public class LinkManager {
         this.linkData.removePlayerLink(link);
     }
 
-
     public void onMemberRemoved(Member member) {
         this.kickAccounts(member, this.integration.getConfig().kickMessages.kickOnLeave);
         if (this.unlinkPlayer(member.getIdLong())) {
-            LOGGER.info("Removed link of \"{}\" because they left the guild.", member.getEffectiveName());
+            LOGGER.info(
+                "Removed link of \"{}\" because they left the guild.", member.getEffectiveName());
         }
     }
 
     public void kickAccounts(Member member, String reason) {
-        Optional<PlayerLink> playerLink = this.integration.getLinkManager().getDataOf(member.getIdLong());
+        Optional<PlayerLink> playerLink =
+            this.integration.getLinkManager().getDataOf(member.getIdLong());
         if (playerLink.isEmpty()) {
             return;
         }

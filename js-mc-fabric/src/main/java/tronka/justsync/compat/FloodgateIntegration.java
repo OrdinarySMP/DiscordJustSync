@@ -1,22 +1,19 @@
 package tronka.justsync.compat;
 
 import com.mojang.authlib.GameProfile;
-
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Role;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.server.network.ServerPlayerEntity;
-
-import org.geysermc.floodgate.api.FloodgateApi;
-import tronka.justsync.JustSyncApplication;
-import tronka.justsync.linking.LinkManager;
-import tronka.justsync.linking.PlayerLink;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Role;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.server.network.ServerPlayerEntity;
+import org.geysermc.floodgate.api.FloodgateApi;
+import tronka.justsync.JustSyncApplication;
+import tronka.justsync.core.view.linking.PlayerLink;
+import tronka.justsync.linking.LinkManager;
 
 public class FloodgateIntegration {
     private FloodgateApi floodgateApi;
@@ -87,7 +84,8 @@ public class FloodgateIntegration {
         boolean currentIsBedrock = this.isBedrock(id);
 
         for (UUID uuid : uuids) {
-            ServerPlayerEntity player = this.integration.getServer().getPlayerManager().getPlayer(uuid);
+            ServerPlayerEntity player =
+                this.integration.getServer().getPlayerManager().getPlayer(uuid);
             if ((player != null) && (this.isBedrock(uuid) != currentIsBedrock)) {
                 return false;
             }
@@ -95,6 +93,4 @@ public class FloodgateIntegration {
 
         return true;
     }
-
 }
-

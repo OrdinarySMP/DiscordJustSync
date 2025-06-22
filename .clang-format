@@ -1,5 +1,6 @@
 TabWidth: 4
 IndentWidth: 4
 UseTab: Never
+ColumnLimit: 120
 
 BasedOnStyle: Google

@@ -1,25 +1,18 @@
-package tronka.justsync.linking;
+package tronka.justsync.core.view.linking;
 
-import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import tronka.justsync.Utils;
+import tronka.justsync.core.data.DataProviders;
 
 public class PlayerLink {
-
     private UUID playerId;
     private long discordId;
     private List<PlayerData> alts;
     private transient LinkData dataObj;
 
-    public PlayerLink() {
-
-    }
-
-    public PlayerLink(LinkRequest request, long discordId) {
-        this(request.getPlayerId(), discordId);
-    }
+    public PlayerLink() {}
 
     public PlayerLink(UUID playerId, long discordId) {
         this.playerId = playerId;
@@ -32,7 +25,7 @@ public class PlayerLink {
     }
 
     public String getPlayerName() {
-        return Utils.getPlayerName(this.playerId);
+        return DataProviders.USERNAME.getValue(this.playerId).orElse("unknown");
     }
 
     public long getDiscordId() {
@@ -62,8 +55,8 @@ public class PlayerLink {
         return this.alts.size();
     }
 
-    public ImmutableList<PlayerData> getAlts() {
-        return ImmutableList.copyOf(this.alts);
+    public Collection<PlayerData> getAlts() {
+        return List.copyOf(this.alts);
     }
 
     public List<UUID> getAllUuids() {
@@ -79,7 +72,8 @@ public class PlayerLink {
 
     @Override
     public String toString() {
-        return "PlayerLink{" + "playerId=" + this.playerId + ", discordId=" + this.discordId + ", alts=" + this.alts + ", dataObj="
-            + this.dataObj + '}';
+        return "PlayerLink{"
+            + "playerId=" + this.playerId + ", discordId=" + this.discordId + ", alts=" + this.alts
+            + ", dataObj=" + this.dataObj + '}';
     }
 }

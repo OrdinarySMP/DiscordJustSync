@@ -18,10 +18,9 @@ import org.slf4j.LoggerFactory;
 import tronka.justsync.JustSyncApplication;
 import tronka.justsync.Utils;
 import tronka.justsync.config.Config;
-import tronka.justsync.linking.PlayerLink;
+import tronka.justsync.core.view.linking.PlayerLink;
 
 public class LuckPermsIntegration {
-
     private static final Logger log = LoggerFactory.getLogger(LuckPermsIntegration.class);
     private final JustSyncApplication integration;
     private boolean loaded = false;
@@ -38,7 +37,8 @@ public class LuckPermsIntegration {
     private void onConfigLoaded(Config config) {
         this.loaded = config.integrations.enableLuckPermsIntegration;
         this.syncedRoles = new HashMap<>();
-        for (Entry<String, List<String>> sync : config.integrations.luckPerms.syncedRoles.entrySet()) {
+        for (Entry<String, List<String>> sync :
+            config.integrations.luckPerms.syncedRoles.entrySet()) {
             Optional<Role> role = Utils.parseRole(this.integration.getGuild(), sync.getKey());
             role.ifPresent(value -> this.syncedRoles.put(value, sync.getValue()));
         }
@@ -107,9 +107,10 @@ public class LuckPermsIntegration {
             return;
         }
         luckPerms.getUserManager().loadUser(uuid).thenAccept(user -> {
-            Set<String> groups = Set.copyOf(
-                this.integration.getConfig().integrations.luckPerms.altGroups
-                    .stream().map(group -> "group." + group).toList());
+            Set<String> groups = Set.copyOf(this.integration.getConfig()
+                    .integrations.luckPerms.altGroups.stream()
+                    .map(group -> "group." + group)
+                    .toList());
             user.data().clear(node -> groups.contains(node.getKey()));
             luckPerms.getUserManager().saveUser(user);
         });

@@ -6,11 +6,10 @@ import java.util.Optional;
 import java.util.UUID;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import tronka.justsync.config.Config;
-import tronka.justsync.linking.PlayerData;
-import tronka.justsync.linking.PlayerLink;
+import tronka.justsync.core.view.linking.PlayerData;
+import tronka.justsync.core.view.linking.PlayerLink;
 
 public class DiscordLogger {
-
     private final JustSyncApplication integration;
     private TextChannel channel;
 
@@ -21,7 +20,8 @@ public class DiscordLogger {
 
     private void onConfigLoaded(Config config) {
         if (this.integration.getConfig().linking.logLinking) {
-            this.channel = Utils.getTextChannel(this.integration.getJda(), config.linking.linkingLogChannel, "linkingLogChannel");
+            this.channel = Utils.getTextChannel(
+                this.integration.getJda(), config.linking.linkingLogChannel, "linkingLogChannel");
             if (this.channel == null) {
                 LogUtils.getLogger().error("invalid linkingLogChannel id");
             }
@@ -39,10 +39,10 @@ public class DiscordLogger {
             LogUtils.getLogger().error("playerlink of just linked player not found");
             return;
         }
-        this.channel.sendMessage(
-            "`" + optionalPlayerLink.get().getPlayerName() + "` was linked to <@" + optionalPlayerLink.get()
-                .getDiscordId() + ">").queue();
-
+        this.channel
+            .sendMessage("`" + optionalPlayerLink.get().getPlayerName() + "` was linked to <@"
+                + optionalPlayerLink.get().getDiscordId() + ">")
+            .queue();
     }
 
     public void onLinkAlt(UUID uuid) {
@@ -54,15 +54,20 @@ public class DiscordLogger {
             LogUtils.getLogger().error("something went wrong, playerlink not found after linking");
             return;
         }
-        Optional<PlayerData> alt = optionalPlayerLink.get().getAlts().stream()
-            .filter((playerData) -> playerData.getId() == uuid).findFirst();
+        Optional<PlayerData> alt = optionalPlayerLink.get()
+                                       .getAlts()
+                                       .stream()
+                                       .filter((playerData) -> playerData.getId() == uuid)
+                                       .findFirst();
         if (alt.isEmpty()) {
             LogUtils.getLogger().error("alt that was just added not found in playerlink");
             return;
         }
-        this.channel.sendMessage(
-            "Alt `" + alt.get().getName() + "` was added to `" + optionalPlayerLink.get().getPlayerName() + "` aka <@"
-                + optionalPlayerLink.get().getDiscordId() + ">").queue();
+        this.channel
+            .sendMessage("Alt `" + alt.get().getName() + "` was added to `"
+                + optionalPlayerLink.get().getPlayerName() + "` aka <@"
+                + optionalPlayerLink.get().getDiscordId() + ">")
+            .queue();
     }
 
     public void onUnlink(PlayerLink playerLink) {
@@ -82,7 +87,9 @@ public class DiscordLogger {
             }
             altsList.delete(altsList.length() - 2, altsList.length() - 1);
         }
-        this.channel.sendMessage("`" + mcUsername + "` was unlinked from <@" + discordId + "> " + altsList).queue();
+        this.channel
+            .sendMessage("`" + mcUsername + "` was unlinked from <@" + discordId + "> " + altsList)
+            .queue();
     }
 
     public void onUnlinkAlt(UUID uuid) {
@@ -94,9 +101,10 @@ public class DiscordLogger {
             LogUtils.getLogger().error("tried to unlink alt, but alt was not found");
             return;
         }
-        this.channel.sendMessage(
-            "Alt `" + Utils.getPlayerName(uuid) + "` was unlinked from user `" + optionalPlayerLink.get()
-                .getPlayerName() + "` aka <@" + optionalPlayerLink.get().getDiscordId() + ">").queue();
+        this.channel
+            .sendMessage("Alt `" + Utils.getPlayerName(uuid) + "` was unlinked from user `"
+                + optionalPlayerLink.get().getPlayerName() + "` aka <@"
+                + optionalPlayerLink.get().getDiscordId() + ">")
+            .queue();
     }
-
 }
