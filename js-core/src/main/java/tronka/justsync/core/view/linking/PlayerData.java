@@ -6,8 +6,6 @@ import tronka.justsync.core.data.DataProviders;
 public class PlayerData {
     private UUID id;
 
-    public PlayerData() {}
-
     public PlayerData(UUID id) {
         this.id = id;
     }

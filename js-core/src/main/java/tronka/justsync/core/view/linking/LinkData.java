@@ -1,8 +1,8 @@
 package tronka.justsync.core.view.linking;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 public interface LinkData {
     Optional<PlayerLink> getPlayerLink(UUID playerId);
@@ -15,5 +15,5 @@ public interface LinkData {
 
     void updatePlayerLink(PlayerLink playerLink);
 
-    Stream<PlayerLink> getPlayerLinks();
+    List<PlayerLink> getPlayerLinks();
 }

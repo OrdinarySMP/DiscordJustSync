@@ -7,7 +7,7 @@ import java.util.UUID;
 import tronka.justsync.core.data.DataProviders;
 
 public class PlayerLink {
-    private UUID playerId;
+    private PlayerData playerData;
     private long discordId;
     private List<PlayerData> alts;
     private transient LinkData dataObj;
@@ -15,17 +15,21 @@ public class PlayerLink {
     public PlayerLink() {}
 
     public PlayerLink(UUID playerId, long discordId) {
-        this.playerId = playerId;
+        this.playerData = new PlayerData(playerId);
         this.discordId = discordId;
         this.alts = new ArrayList<>();
     }
 
-    public UUID getPlayerId() {
-        return this.playerId;
+    public PlayerLink(LinkRequest req, long discordId) {
+        this(req.getUuid(), discordId);
+    }
+
+    public PlayerData getPlayerData() {
+        return this.playerData;
     }
 
     public String getPlayerName() {
-        return DataProviders.USERNAME.getValue(this.playerId).orElse("unknown");
+        return DataProviders.USERNAME.getValue(this.playerData.getId()).orElse("unknown");
     }
 
     public long getDiscordId() {
@@ -38,7 +42,7 @@ public class PlayerLink {
     }
 
     public void removeAlt(UUID uuid) {
-        this.alts.removeIf(data -> data.getId().equals(uuid));
+        this.alts.removeIf(data -> uuid.equals(data.getId()));
         this.dataObj.updatePlayerLink(this);
     }
 
@@ -48,7 +52,7 @@ public class PlayerLink {
     }
 
     public boolean hasAlt(UUID uuid) {
-        return this.alts.stream().map(PlayerData::getId).anyMatch(uuid::equals);
+        return this.alts.stream().anyMatch(alt -> uuid.equals(alt.getId()));
     }
 
     public int altCount() {
@@ -62,7 +66,7 @@ public class PlayerLink {
     public List<UUID> getAllUuids() {
         List<UUID> uuids = new ArrayList<>();
         this.alts.forEach(alt -> uuids.add(alt.getId()));
-        uuids.add(this.playerId);
+        uuids.add(this.playerData.getId());
         return uuids;
     }
 
@@ -73,7 +77,7 @@ public class PlayerLink {
     @Override
     public String toString() {
         return "PlayerLink{"
-            + "playerId=" + this.playerId + ", discordId=" + this.discordId + ", alts=" + this.alts
+            + "playerId=" + this.playerData.getId() + ", discordId=" + this.discordId + ", alts=" + this.alts
             + ", dataObj=" + this.dataObj + '}';
     }
 }

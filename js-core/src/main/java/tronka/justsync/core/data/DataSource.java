@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+
 public class DataSource<T, R> {
     private List<Function<T, Optional<R>>> providers = new ArrayList<>();
+
     public void addProvider(Function<T, Optional<R>> provider) {
         this.providers.add(provider);
     }
@@ -21,6 +23,6 @@ public class DataSource<T, R> {
                 return value;
             }
         }
-        return  Optional.empty();
+        return Optional.empty();
     }
 }
