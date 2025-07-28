@@ -95,17 +95,11 @@ public class DiscordChatMessageSender {
         this.editDiscordMessage();
     }
 
-    private String cleanedMessage() {
-        return this.message.replace("@everyone", "@ everyone")
-            .replace("@here", "@ here")
-            .replaceAll("<@&\\d+>", "@role-ping");
-    }
-
     private String getMessage() {
         if (this.sender != null) {
-            return Utils.escapeUnderscores(this.sender.getName().getLiteralString()) + ": " + this.cleanedMessage();
+            return Utils.escapeUnderscores(this.sender.getName().getLiteralString()) + ": " + this.message;
         }
-        return this.cleanedMessage();
+        return this.message;
     }
 
     private void sendMessageToDiscord() {
@@ -120,7 +114,7 @@ public class DiscordChatMessageSender {
     private void editDiscordMessage() {
         String displayedCount = " (" + this.repetitionCount + ")";
         if (this.sender != null && this.webhookClient != null) {
-            this.editAsWebhook(this.cleanedMessage() + displayedCount);
+            this.editAsWebhook(this.message + displayedCount);
             return;
         }
         this.channel.editMessageById(this.messageId, this.getMessage() + displayedCount).submit()
@@ -135,7 +129,7 @@ public class DiscordChatMessageSender {
     private void sendAsWebhook() {
         String avatarUrl = this.getAvatarUrl(this.sender);
         WebhookMessage msg = new WebhookMessageBuilder().setUsername(this.sender.getName().getLiteralString())
-            .setAvatarUrl(avatarUrl).setContent(this.cleanedMessage()).build();
+            .setAvatarUrl(avatarUrl).setContent(this.message).build();
         this.readyFuture = this.webhookClient.send(msg).thenApply(ReadonlyMessage::getId)
             .thenAccept(this::updateMessage).exceptionally(this::handleFailure);
 
