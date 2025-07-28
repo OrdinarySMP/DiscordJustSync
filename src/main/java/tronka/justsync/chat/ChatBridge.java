@@ -216,6 +216,8 @@ public class ChatBridge extends ListenerAdapter {
         if (connectedPlayer != null && this.integration.getVanishIntegration().isVanished(connectedPlayer)) {
             return;
         }
+        message = Utils.escapeMentions(message);
+        message = Utils.formatMentions(message, this.integration, sender);
         if (this.messageSender == null || this.messageSender.hasChanged(message, sender)) {
             this.messageSender = new DiscordChatMessageSender(this.webhookClient, this.channel,
                 this.integration.getConfig(), message, sender);

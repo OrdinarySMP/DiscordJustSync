@@ -20,7 +20,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.IMentionable;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.minecraft.registry.RegistryKey;
@@ -52,6 +55,7 @@ public final class Utils {
             World.NETHER, "Nether",
             World.END, "End"
         );
+    private static final Pattern HUMAN_READABLE_MENTION_PATTERN = Pattern.compile("@(\\S+)");
 
 
     public static List<Role> parseRoleList(Guild guild, List<String> roleIds) {
@@ -273,4 +277,37 @@ public final class Utils {
             return defaultValue;
         }
     }
+
+    public static String escapeMentions(String message) {
+        return message.replace("@everyone", "@ everyone")
+            .replace("@here", "@ here")
+            .replaceAll("<@&\\d+>", "@role-ping");
+    }
+
+    public static String formatMentions(String message, JustSyncApplication integration, ServerPlayerEntity player) {
+        Matcher matcher = HUMAN_READABLE_MENTION_PATTERN.matcher(message);
+        return matcher.replaceAll(match ->
+            integration.getGuild().getMembersByEffectiveName(match.group(1), true)
+                .stream()
+                .findFirst()
+                .map(IMentionable::getAsMention)
+                .orElseGet(() -> integration.getGuild().getRolesByName(match.group(1), true)
+                    .stream()
+                    .filter(role ->  {
+                        if (role.isMentionable()) {
+                            return true;
+                        }
+                        if (player == null) {
+                            return false;
+                        }
+                        Optional<Member> member = integration.getLinkManager().getDiscordOf(player.getUuid());
+                        return member.map(m -> m.hasPermission(Permission.MESSAGE_MENTION_EVERYONE)).orElse(false);
+                    })
+                    .findFirst()
+                    .map(IMentionable::getAsMention)
+                    .orElse("@" + match.group(1))
+                )
+        );
+    }
+
 }
