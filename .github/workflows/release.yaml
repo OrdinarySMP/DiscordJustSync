@@ -95,6 +95,29 @@ jobs:
         run: |
           minecraft_version=$(grep "^minecraft_version=" "gradle.properties" | cut -d'=' -f2)
           echo "MINECRAFT_VERSION=$minecraft_version" >> $GITHUB_ENV
+          last_minecraft_version=$(grep "^last_minecraft_version=" "gradle.properties" | cut -d'=' -f2)
+          echo "LAST_MINECRAFT_VERSION=$last_minecraft_version" >> $GITHUB_ENV
+
+      - name: Generate Minecraft versions JSON
+        run: |
+          if [[ -z "$LAST_MINECRAFT_VERSION" ]]; then
+              LAST_MINECRAFT_VERSION=$(curl -s https://piston-meta.mojang.com/mc/game/version_manifest_v2.json | jq -r '.latest.release')
+          fi
+
+          MAJOR_MINOR=$(echo "$MINECRAFT_VERSION" | cut -d. -f1,2)
+          START_PATCH=$(echo "$MINECRAFT_VERSION" | cut -d. -f3)
+          END_PATCH=$(echo "$LAST_MINECRAFT_VERSION" | cut -d. -f3)
+
+          seq $START_PATCH $END_PATCH | awk -v mm="$MAJOR_MINOR" '{print mm "." $1}' | jq -R . | jq -s -c . > versions.json
+
+      - name: Load generated versions into env var
+
+        run: |
+          VERSIONS=$(jq -r '.[]' versions.json | paste -sd '\n' -)
+          echo "MINECRAFT_VERSIONS<<EOF" >> $GITHUB_ENV
+          echo "$VERSIONS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: Upload to Modrinth
         if: steps.semantic-release.outputs.new_release_version != ''
         uses: cloudnode-pro/modrinth-publish@v2
@@ -107,5 +130,5 @@ jobs:
           loaders: |-
             fabric
           game-versions: |-
-            ${{ env.MINECRAFT_VERSION }}
+            ${{ env.MINECRAFT_VERSIONS }}
           files: build/libs/DiscordJustSync-${{ steps.semantic-release.outputs.new_release_version }}.jar
