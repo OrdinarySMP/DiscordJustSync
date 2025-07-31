@@ -1,7 +1,9 @@
 package tronka.justsync;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.PropertyMap;
 import com.mojang.authlib.yggdrasil.ProfileResult;
 import com.mojang.logging.LogUtils;
 import eu.pb4.placeholders.api.node.TextNode;
@@ -11,9 +13,12 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -310,4 +315,28 @@ public final class Utils {
         );
     }
 
+    public static String getTextureId(ServerPlayerEntity player) {
+        String textureId = null;
+        try {
+            PropertyMap propertyMap = player.getGameProfile().getProperties();
+            String textureBase64 = propertyMap.get("textures").iterator().next().value();
+            JsonObject json =
+                    new Gson()
+                            .fromJson(
+                                    new String(
+                                            Base64.getDecoder().decode(textureBase64),
+                                            StandardCharsets.UTF_8),
+                                    JsonObject.class);
+            String url =
+                    json.getAsJsonObject("textures")
+                            .getAsJsonObject("SKIN")
+                            .get("url")
+                            .getAsString();
+            textureId =
+                    url.replace("http://textures.minecraft.net/texture/", "").replace(".png", "");
+        } catch (NoSuchElementException ignored) {
+        }
+
+        return textureId;
+    }
 }
