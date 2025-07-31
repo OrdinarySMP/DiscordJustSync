@@ -81,27 +81,33 @@ dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    include(modImplementation('me.lucko:fabric-permissions-api:0.4.0'))
+    include(modImplementation("me.lucko:fabric-permissions-api:${project.fabric_permissions_api_version}"))
 
+    // fabric api
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    // productionRuntimeMods "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    embed implementation("net.dv8tion:JDA:5.3.2") {
+    embed implementation("net.dv8tion:JDA:${project.jda_version}") {
         exclude module: "opus-java"
     }
 
-    embed implementation('club.minnced:discord-webhooks:0.8.4')
+    embed implementation("club.minnced:discord-webhooks:${project.webhooks_version}")
     embed implementation("de.erdbeerbaerlp:toml4j:dd60f51")
-    compileOnly 'net.luckperms:api:5.4'
-    compileOnly('org.geysermc.floodgate:api:2.2.4-SNAPSHOT')
-    modCompileOnly "maven.modrinth:vanish:1.5.13+1.21.5"
-    modImplementation("eu.pb4:placeholder-api:2.5.2+1.21.3")
+
+    // integrations
+    compileOnly "net.luckperms:api:${project.luckperms_api_version}"
+    compileOnly "org.geysermc.floodgate:api:${project.floodgate_api_version}"
+    modCompileOnly "maven.modrinth:vanish:${project.vanish_version}"
+
+    // placeholder-api
+    modImplementation "eu.pb4:placeholder-api:${project.placeholder_api_version}"
+    productionRuntimeMods "eu.pb4:placeholder-api:${project.placeholder_api_version}"
 }
 tasks.build.dependsOn(tasks.shadowJar)
 
 processResources {
     def minecraft_version = project.minecraft_version
     if (project.last_minecraft_version != "") {
-        System.out.println("test")
         minecraft_version = minecraft_version + " <=" + project.last_minecraft_version
     }
     inputs.property "version", project.version
@@ -114,6 +120,44 @@ processResources {
                 "minecraft_version": minecraft_version,
                 "loader_version": project.loader_version
     }
+}
+
+tasks.register("prodServer", net.fabricmc.loom.task.prod.ServerProductionRunTask) {
+    def version = (project.hasProperty('version') && project.property('version') != 'unspecified') 
+        ? project.property('version'): project.minecraft_version
+
+    def fabricApiMetadataUrl = 'https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml'
+
+    def latestFabricApiVersion = null
+    try {
+        def xmlText = new URL(fabricApiMetadataUrl).text
+        def parsedXml = new XmlSlurper().parseText(xmlText)
+        def matchingVersions = parsedXml.versioning.versions.version.findAll {
+            v -> v.text().endsWith("+${version}")
+        }
+        if (!matchingVersions.isEmpty()) {
+            latestFabricApiVersion = matchingVersions[-1].text()
+        }
+    } catch (Exception e) {
+        logger.warn("Failed to fetch or parse Fabric API metadata, falling back to default version: $e")
+        latestFabricApiVersion = project.fabric_version 
+        version = project.minecraft_version
+    }
+
+    if (latestFabricApiVersion == null) {
+        throw new GradleException("No Fabric API version found for specified Minecraft version: ${version}")
+    }
+
+    configurations {
+        register("runtimeMods")
+    }
+
+    dependencies.add("runtimeMods", "net.fabricmc.fabric-api:fabric-api:${latestFabricApiVersion}")
+    mods.from(configurations.named("runtimeMods"))
+
+    installerVersion = "1.0.1"
+    loaderVersion = project.loader_version
+    minecraftVersion = version
 }
 
 def targetJavaVersion = 21
