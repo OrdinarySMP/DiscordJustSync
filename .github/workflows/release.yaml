@@ -19,6 +19,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Create .releaserc file
+        run: |
+          echo '{
+          "plugins": [
+            [
+              "@semantic-release/commit-analyzer",
+              {
+                "preset": "angular",
+                "releaseRules": [
+                  { "type": "enhance", "release": "patch" }
+                ]
+              }
+            ]
+          ]
+          }' > .releaserc
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v4
         id: semantic-release-dry
@@ -72,7 +87,15 @@ jobs:
         run: |
           echo '{
           "plugins": [
+          [
             "@semantic-release/commit-analyzer",
+            {
+                "preset": "angular",
+                "releaseRules": [
+                    { "type": "enhance", "release": "patch" }
+                ]
+            }
+          ],
             "@semantic-release/release-notes-generator",
             ["@semantic-release/github", {
               "assets": [
