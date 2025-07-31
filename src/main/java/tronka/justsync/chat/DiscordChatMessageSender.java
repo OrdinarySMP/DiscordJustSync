@@ -122,8 +122,14 @@ public class DiscordChatMessageSender {
     }
 
     private String getAvatarUrl(ServerPlayerEntity player) {
-        return this.config.avatarUrl.replace("%UUID%", player.getUuid().toString())
-            .replace("%randomUUID%", UUID.randomUUID().toString());
+        String avatarUrl = this.config
+                .avatarUrl
+                .replace("%UUID%", player.getUuid().toString())
+                .replace("%randomUUID%", UUID.randomUUID().toString());
+        if (avatarUrl.contains("%textureId%")) {
+            avatarUrl = avatarUrl.replace("%textureId%", Utils.getTextureId(player));
+        }
+        return avatarUrl;
     }
 
     private void sendAsWebhook() {

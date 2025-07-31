@@ -22,8 +22,14 @@ public class Config {
     public String serverChatChannel = "";
     @TomlComment("Whether a webhook should be used to send chat messages to discord")
     public boolean useWebHooks = true;
-    @TomlComment("Url to use for the pfp of chat messages sent through the webhook")
-    public String avatarUrl = "https://minotar.net/avatar/%UUID%?randomuuid=%randomUUID%";
+
+    @TomlComment({
+        "URL to use for the pfp of chat messages sent through the webhook. Placeholders:",
+        "%UUID% - player's uuid",
+        "%randomUUID% - random uuid to prevent caching on some apis",
+        "%textureId% - texture id instead of uuid (for use with e.g. SkinsRestorer)"
+    })
+    public String avatarUrl = "https://minotar.net/helm/%UUID%?randomuuid=%randomUUID%";
 
 
     @TomlComment("When the same message is sent multiple times only one message will be sent to discord")
