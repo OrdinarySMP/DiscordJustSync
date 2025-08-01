@@ -206,7 +206,7 @@ public final class Utils {
         String y = matcher.group(2);
         String z = matcher.group(3);
         String dim = DIMENSION_MAP.getOrDefault(
-            player.getWorld().getRegistryKey(), "Unknown");
+            player.getServerWorld().getRegistryKey(), "Unknown");
 
         return replacePlaceholdersWaypoint("Shared Location", "S", dim, x, y, z, config);
     }
