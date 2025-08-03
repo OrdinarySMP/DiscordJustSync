@@ -92,7 +92,7 @@ dependencies {
     }
 
     embed implementation("club.minnced:discord-webhooks:${project.webhooks_version}")
-    embed implementation("de.erdbeerbaerlp:toml4j:dd60f51")
+    embed implementation("com.github.nombel-mombel:toml4j:b90e761")
 
     // integrations
     compileOnly "net.luckperms:api:${project.luckperms_api_version}"
