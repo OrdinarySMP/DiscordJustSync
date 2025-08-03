@@ -16,15 +16,15 @@ import tronka.justsync.JustSyncApplication;
 
 public class Config {
 
-    @TomlComment("Discord bot token, required to connect to discord")
+    @TomlComment("Discord bot token, required to connect to Discord (get from Discord Developer Portal)")
     public String botToken = "";
-    @TomlComment("Channel to sync with the minecraft chat (required)")
+    @TomlComment("Discord channel ID to sync with Minecraft chat (required - right-click channel and copy ID)")
     public String serverChatChannel = "";
-    @TomlComment("Whether a webhook should be used to send chat messages to discord")
+    @TomlComment("Use Discord webhooks for chat messages with player avatars and usernames")
     public boolean useWebHooks = true;
 
     @TomlComment({
-        "URL to use for the pfp of chat messages sent through the webhook. Placeholders:",
+        "URL template for player profile pictures in webhook messages. Placeholders:",
         "%UUID% - player's uuid",
         "%randomUUID% - random uuid to prevent caching on some apis",
         "%textureId% - texture id instead of uuid (for use with e.g. SkinsRestorer)"
@@ -32,9 +32,9 @@ public class Config {
     public String avatarUrl = "https://minotar.net/helm/%UUID%?randomuuid=%randomUUID%";
 
 
-    @TomlComment("When the same message is sent multiple times only one message will be sent to discord")
+    @TomlComment("Combine multiple identical consecutive messages into one Discord message to reduce spam")
     public boolean stackMessages = false;
-    @TomlComment("After how many seconds of no messages, a new message should be sent")
+    @TomlComment("Time in seconds before sending a new message regardless if it is identical")
     public int stackMessagesTimeoutInSec = 60;
 
     @Deprecated
@@ -44,22 +44,22 @@ public class Config {
     @TomlIgnore
     public String waypointURL = "";
 
-    @TomlComment("Send death messages to discord")
+    @TomlComment("Broadcast player death messages to Discord")
     public boolean broadCastDeathMessages = true;
-    @TomlComment("Send advancement notifications to discord")
+    @TomlComment("Send player advancement/achievement notifications to Discord")
     public boolean announceAdvancements = true;
 
-    @TomlComment("Show the online player count as the bots status")
+    @TomlComment("Display online player count in the Discord bot's activity status")
     public boolean showPlayerCountStatus = true;
 
-    @TomlComment({"Disables formatting codes sent from discord",
-        "for reference check the wiki entry: https://minecraft.wiki/w/Formatting_codes"})
+    @TomlComment({"Prevent Discord users from using Minecraft formatting codes (§ symbols)",
+        "Reference: https://minecraft.wiki/w/Formatting_codes"})
     public boolean restrictFormattingCodes = false;
 
-    @TomlComment("Character to replace '§'. Leave empty to remove formatting code.")
+    @TomlComment("Character to replace '§' formatting codes with. Leave empty to remove formatting code completely.")
     public String formattingCodeReplacement = "";
 
-    @TomlComment("Allow certain discord roles to use formatting even when disabled")
+    @TomlComment("Discord role IDs that can bypass formatting code restrictions")
     public List<String> formattingCodeRestrictionOverrideRoles = new ArrayList<>();
 
 
@@ -123,31 +123,31 @@ public class Config {
 
     public static class LinkingOptions {
 
-        @TomlComment("Should players be required to link to a discord account")
+        @TomlComment("Require players to link their Minecraft account to a Discord account before joining")
         public boolean enableLinking = true;
-        @TomlComment("Should players be unlinked from their discord account if they leave the discord server")
+        @TomlComment("Automatically unlink players when they leave the Discord server")
         public boolean unlinkOnLeave = true;
-        @TomlComment("Should linking and unlinking be logged to a discord channel")
+        @TomlComment("Log account linking and unlinking events to a Discord channel")
         public boolean logLinking = false;
-        @TomlComment("channel in which linking/unlinking should be logged (only if logLinking set to true)")
+        @TomlComment("Discord channel ID for logging linking events (only used if logLinking is true)")
         public String linkingLogChannel = "";
-        @TomlComment("What roles a player must have on discord to join the minecraft server")
+        @TomlComment("Discord roles that players must have to join the Minecraft server (list of role IDs)")
         public List<String> requiredRoles = new ArrayList<>();
-        @TomlComment({"Number of roles of requiredRoles to be required",
-            "-1 defaults to all required"})
+        @TomlComment({"Minimum number of roles from requiredRoles list that players must have",
+            "-1 means all roles are required, 1 means at least one role is required"})
         public int requiredRolesCount = -1;
-        @TomlComment("What roles should be assigned to a players discord account when they join")
+        @TomlComment("Discord roles to automatically assign when players join Minecraft")
         public List<String> joinRoles = new ArrayList<>();
-        @TomlComment("Players discord nickname will be set to their ingame name")
+        @TomlComment("Automatically set Discord nickname to match Minecraft username when players join")
         public boolean renameOnJoin = true;
-        @TomlComment("Block discord users with an ongoing timeout from joining")
+        @TomlComment("Prevent Discord users with active timeouts from joining Minecraft")
         public boolean disallowTimeoutMembersToJoin = true;
-        @TomlComment("How many minutes a code for linking should be valid")
+        @TomlComment("How long (in minutes) a linking code remains valid before expiring")
         public long linkCodeExpireMinutes = 10;
-        @TomlComment({"How many alt accounts should a player be able to link to a single discord account",
-            "If maxAlts is set to 1 players will be able to link their main account as well as a single alt account"})
+        @TomlComment({"Maximum alternate accounts that can be linked to one Discord account",
+            "Example: maxAlts=1 allows 1 main account + 1 alt account per Discord user"})
         public int maxAlts = 1;
-        @TomlComment("Any role can have an override for the maximum amount of alts")
+        @TomlComment("Per-role overrides for maximum alt accounts (Discord role ID -> max alts)")
         public Map<String, Integer> maxAltsForRoles = Map.of("1234567890", 2);
     }
 
@@ -296,28 +296,26 @@ public class Config {
         @TomlIgnore
         public String consoleChannel = "";
 
-        @TomlComment("Channel to log commands to")
+        @TomlComment("Discord channel ID where executed commands will be logged")
         public String commandLogChannel = "";
-        @TomlComment("Channel to execute commands in")
+        @TomlComment("Discord channel ID where commands can be executed from")
         public String commandChannel = "";
-        @TomlComment("Whether all commands should be logged")
+        @TomlComment("Log all server commands to the command log channel")
         public boolean logCommandsInConsole = true;
-        @TomlComment("Should commands from commands blocks be logged")
+        @TomlComment("Include command block executions in command logging")
         public boolean logCommandBlockCommands = false;
-        @TomlComment("List of commands to ignore/not send to the consoleChannel")
+        @TomlComment("Commands to exclude from logging (list of command names without slashes)")
         public List<String> ignoredCommands = new ArrayList<>();
-        @TomlComment("Prefix to use in front of commands on discord")
+        @TomlComment("Text prefix required before commands in Discord (e.g. '//kick player')")
         public String commandPrefix = "//";
-        @TomlComment("A role that is required to be able to run commands")
+        @TomlComment("Discord role ID required to execute commands from Discord")
         public String opRole = "";
-        @TomlComment("logRedirectChannels: Specific channels to send certain commands to instead of to the consoleChannel")
+        @TomlComment("Redirect specific command outputs to different channels instead of main command log")
         public List<LogRedirectChannel> logRedirectChannels = List.of(
             LogRedirectChannel.of("", List.of("w ", "msg ", "tell ")));
-        @TomlComment("commandList: List of commands that can be run from the consoleChannel by sending a message starting with the commandPrefix")
+        @TomlComment("Custom Discord commands that execute Minecraft commands when used with the prefix")
         public List<BridgeCommand> commandList = List.of(
             BridgeCommand.of("kick", "kick %args%"),
-            BridgeCommand.of("stop", "stop"),
-            BridgeCommand.of("kill", "kill %args%"),
             BridgeCommand.of("ban", "ban %args%")
         );
     }
