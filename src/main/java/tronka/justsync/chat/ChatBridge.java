@@ -145,9 +145,13 @@ public class ChatBridge extends ListenerAdapter {
         if (this.stopped) {
             return;
         }
-
-        this.sendMessageToDiscord(this.integration.getConfig().messages.playerLeaveMessage.replace("%user%",
-            Utils.escapeUnderscores(player.getName().getString())), null, player);
+        String message = this.integration.getConfig().messages.playerLeaveMessage.replace("%user%",
+                Utils.escapeUnderscores(player.getName().getString()));
+        if (vanish) {
+            this.sendMessageToDiscordUnchecked(message, null);
+        } else {
+            this.sendMessageToDiscord(message, null, player);
+        }
         this.updateRichPresence(vanish ? 0 : -1);
     }
 
@@ -210,12 +214,17 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     private void sendMessageToDiscord(String message, ServerPlayerEntity sender, ServerPlayerEntity connectedPlayer) {
-        if (message.trim().isEmpty()) {
-            return;
-        }
         if (connectedPlayer != null && this.integration.getVanishIntegration().isVanished(connectedPlayer)) {
             return;
         }
+        this.sendMessageToDiscordUnchecked(message, sender);
+    }
+
+    private void sendMessageToDiscordUnchecked(String message, ServerPlayerEntity sender) {
+        if (message.trim().isEmpty()) {
+            return;
+        }
+
         message = Utils.escapeMentions(message);
         message = Utils.formatMentions(message, this.integration, sender);
         if (this.messageSender == null || this.messageSender.hasChanged(message, sender)) {
