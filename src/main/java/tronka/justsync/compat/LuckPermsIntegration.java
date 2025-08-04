@@ -53,27 +53,34 @@ public class LuckPermsIntegration {
         if (link.isEmpty()) {
             return;
         }
-        luckPerms.getUserManager().loadUser(link.get().getPlayerId()).thenAccept(user -> {
-            Set<String> applyGroups = new HashSet<>();
-            Set<String> removeGroups = new HashSet<>();
-            for (Entry<Role, List<String>> sync : this.syncedRoles.entrySet()) {
-                if (member.getRoles().contains(sync.getKey())) {
-                    applyGroups.addAll(sync.getValue());
-                } else {
-                    removeGroups.addAll(sync.getValue());
+
+        List<UUID> uuids =
+                this.integration.getConfig().integrations.luckPerms.assignSyncedRolesToAlts
+                        ? link.get().getAllUuids()
+                        : List.of(link.get().getPlayerId());
+        uuids.forEach(uuid -> {
+            luckPerms.getUserManager().loadUser(uuid).thenAccept(user -> {
+                Set<String> applyGroups = new HashSet<>();
+                Set<String> removeGroups = new HashSet<>();
+                for (Entry<Role, List<String>> sync : this.syncedRoles.entrySet()) {
+                    if (member.getRoles().contains(sync.getKey())) {
+                        applyGroups.addAll(sync.getValue());
+                    } else {
+                        removeGroups.addAll(sync.getValue());
+                    }
                 }
-            }
-            removeGroups.removeAll(applyGroups);
-            if (applyGroups.isEmpty() && removeGroups.isEmpty()) {
-                return;
-            }
-            for (String group : applyGroups) {
-                user.data().add(LuckPermsHelper.getNode(group));
-            }
-            for (String group : removeGroups) {
-                user.data().remove(LuckPermsHelper.getNode(group));
-            }
-            luckPerms.getUserManager().saveUser(user);
+                removeGroups.removeAll(applyGroups);
+                if (applyGroups.isEmpty() && removeGroups.isEmpty()) {
+                    return;
+                }
+                for (String group : applyGroups) {
+                    user.data().add(LuckPermsHelper.getNode(group));
+                }
+                for (String group : removeGroups) {
+                    user.data().remove(LuckPermsHelper.getNode(group));
+                }
+                luckPerms.getUserManager().saveUser(user);
+            });
         });
     }
 
