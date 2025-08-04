@@ -25,6 +25,8 @@ jobs:
         with:
           dry_run: true
           semantic_version: 24.2.3
+          extra_plugins: |
+            conventional-changelog-conventionalcommits
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -78,6 +80,7 @@ jobs:
           extra_plugins: |
             @semantic-release/git
             @semantic-release/github
+            conventional-changelog-conventionalcommits
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN  }}
       - name: Extract Minecraft version
