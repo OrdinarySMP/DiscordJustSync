@@ -287,6 +287,8 @@ public class Config {
             public List<String> altGroups = new ArrayList<>();
             @TomlComment("If a discord member has the specified role they will be given the specified groups")
             public Map<String, List<String>> syncedRoles = Map.of("0123456789", List.of("some.group"));
+            @TomlComment("Assign synced roles to alternate accounts")
+            public boolean assignSyncedRolesToAlts = true;
         }
     }
 
