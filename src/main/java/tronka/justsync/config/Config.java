@@ -64,7 +64,7 @@ public class Config {
 
 
     @TomlComment("Version of the Config file, do not touch!")
-    public int configVersion = 3;
+    public int configVersion = 4;
 
     public MessageStrings messages = new MessageStrings();
     public LinkingOptions linking = new LinkingOptions();
@@ -118,6 +118,12 @@ public class Config {
             config.integrations.floodgate.linkingMixedAccountTypesDenyMessage =
                     config.integrations.floodgate.mixedAccountTypeDenyMessage;
             config.configVersion = 3;
+        }
+
+        // 3 -> 4
+        if (config.configVersion < 4) {
+            config.integrations.luckPerms.assignSyncedRolesToAlts = false;
+            config.configVersion = 4;
         }
     }
 
@@ -287,6 +293,8 @@ public class Config {
             public List<String> altGroups = new ArrayList<>();
             @TomlComment("If a discord member has the specified role they will be given the specified groups")
             public Map<String, List<String>> syncedRoles = Map.of("0123456789", List.of("some.group"));
+            @TomlComment("Assign synced roles to alternate accounts")
+            public boolean assignSyncedRolesToAlts = true;
         }
     }
 
