@@ -18,9 +18,6 @@ import java.util.stream.Stream;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberUpdateEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -301,6 +298,7 @@ public class LinkManager {
             this.integration.getLuckPermsIntegration().unsetAlt(alt.getId());
         }
         this.integration.getDiscordLogger().onUnlink(link);
+        this.integration.getLuckPermsIntegration().removeAllSyncedRoles(link.getAllUuids());
         this.linkData.removePlayerLink(link);
     }
 
@@ -339,6 +337,7 @@ public class LinkManager {
         this.tryKickPlayer(altUuid, this.integration.getConfig().kickMessages.kickUnlinked);
         link.removeAlt(altUuid);
         this.integration.getDiscordLogger().onUnlinkAlt(altUuid);
+        this.integration.getLuckPermsIntegration().removeAllSyncedRoles(altUuid);
         this.integration.getLuckPermsIntegration().unsetAlt(altUuid);
     }
 
