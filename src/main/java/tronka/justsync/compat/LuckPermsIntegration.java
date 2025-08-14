@@ -13,6 +13,8 @@ import net.dv8tion.jda.api.entities.Role;
 import net.fabricmc.loader.api.FabricLoader;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.model.user.User;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tronka.justsync.JustSyncApplication;
@@ -58,30 +60,59 @@ public class LuckPermsIntegration {
                 this.integration.getConfig().integrations.luckPerms.assignSyncedRolesToAlts
                         ? link.get().getAllUuids()
                         : List.of(link.get().getPlayerId());
+
         uuids.forEach(uuid -> {
             luckPerms.getUserManager().loadUser(uuid).thenAccept(user -> {
-                Set<String> applyGroups = new HashSet<>();
-                Set<String> removeGroups = new HashSet<>();
-                for (Entry<Role, List<String>> sync : this.syncedRoles.entrySet()) {
-                    if (member.getRoles().contains(sync.getKey())) {
-                        applyGroups.addAll(sync.getValue());
-                    } else {
-                        removeGroups.addAll(sync.getValue());
-                    }
-                }
-                removeGroups.removeAll(applyGroups);
-                if (applyGroups.isEmpty() && removeGroups.isEmpty()) {
-                    return;
-                }
-                for (String group : applyGroups) {
-                    user.data().add(LuckPermsHelper.getNode(group));
-                }
-                for (String group : removeGroups) {
-                    user.data().remove(LuckPermsHelper.getNode(group));
-                }
-                luckPerms.getUserManager().saveUser(user);
+                Map<String, Boolean> groups = this.getGroups(member);
+                applyGroups(user, groups);
             });
         });
+    }
+
+    public void removeAllSyncedRoles(UUID altUuid) {
+        this.removeAllSyncedRoles(List.of(altUuid));
+    }
+
+    public void removeAllSyncedRoles(List<UUID> uuids) {
+        final LuckPerms luckPerms = this.getLuckPerms();
+        if (luckPerms == null) {
+            return;
+        }
+        uuids.forEach(uuid -> {
+            luckPerms.getUserManager().loadUser(uuid).thenAccept(user -> {
+                Map<String, Boolean> groups = new HashMap<>();
+                this.syncedRoles.values().forEach(groupList -> 
+                    groupList.forEach(group -> groups.put(group, false))
+                );
+                applyGroups(user, groups);
+            });
+        });
+    }
+
+    private void applyGroups(User user, Map<String, Boolean> groups) {
+        if (groups.isEmpty()) {
+            return;
+        }
+        for (Entry<String, Boolean> group : groups.entrySet()) {
+            if (group.getValue()) {
+                user.data().add(LuckPermsHelper.getNode(group.getKey()));
+            } else {
+                user.data().remove(LuckPermsHelper.getNode(group.getKey()));
+            }
+        }
+        this.getLuckPerms().getUserManager().saveUser(user);
+    }
+
+    private Map<String, Boolean> getGroups(Member member) {
+        Map<String, Boolean> groups = new HashMap<>();
+        for (Entry<Role, List<String>> sync : this.syncedRoles.entrySet()) {
+            if (member.getRoles().contains(sync.getKey())) {
+                sync.getValue().forEach(v -> groups.put(v, true));
+            } else {
+                sync.getValue().forEach(v -> groups.putIfAbsent(v, false));
+            }
+        }
+        return groups;
     }
 
     private LuckPerms getLuckPerms() {
