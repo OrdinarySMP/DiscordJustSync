@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Webhook;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -75,7 +76,8 @@ public class ChatBridge extends ListenerAdapter {
         if (event.getChannel() != this.channel) {
             return;
         }
-        if (event.getMember() == null || event.getAuthor().isBot()) {
+        Member member = event.getMember();
+        if (member == null || event.getAuthor().isBot()) {
             return;
         }
 
@@ -98,27 +100,49 @@ public class ChatBridge extends ListenerAdapter {
         }
 
         String messageText = event.getMessage().getContentDisplay();
-        if (messageText.contains("§") && this.integration.getConfig().restrictFormattingCodes &&
-                event.getMember().getRoles().stream().noneMatch(
-                    Utils.parseRoleList(this.integration.getGuild(),
-                        this.integration.getConfig()
-                        .formattingCodeRestrictionOverrideRoles)::contains)) {
+        messageText = replaceFormattingCodes(messageText, member, true);
 
-            if (this.integration.getConfig().formattingCodeReplacement.isEmpty()) {
-                messageText = Utils.removeFormattingCode(messageText);
-            } else {
-                messageText = Utils.replaceFormattingCode(
-                    messageText, this.integration.getConfig().formattingCodeReplacement);
-            }
+        String replyUser = "";
+        if (repliedMessage != null) {
+            replyUser =
+                    repliedMessage.getMember() == null
+                            ? repliedMessage.getAuthor().getEffectiveName()
+                            : repliedMessage.getMember().getEffectiveName();
         }
 
-        String replyUser = repliedMessage == null ? "%userRepliedTo%"
-            : (repliedMessage.getMember() == null ? repliedMessage.getAuthor().getEffectiveName()
-                : repliedMessage.getMember().getEffectiveName());
-        this.sendMcChatMessage(TextReplacer.create()
-            .replace("msg", Utils.parseUrls(messageText, this.integration.getConfig()))
-            .replace("user", event.getMember().getEffectiveName()).replace("userRepliedTo", replyUser)
-            .replace("attachments", attachmentInfo).apply(baseText));
+        this.sendMcChatMessage(
+                TextReplacer.create()
+                        .replace("msg", Utils.parseUrls(messageText, this.integration.getConfig()))
+                        .replace(
+                                "user",
+                                replaceFormattingCodes(member.getEffectiveName(), member, false))
+                        .replace("userRepliedTo", replaceFormattingCodes(replyUser, member, false))
+                        .replace("attachments", attachmentInfo)
+                        .apply(baseText));
+    }
+
+    private String replaceFormattingCodes(String text, Member member, boolean withBypass) {
+        if (text.contains("§") && this.integration.getConfig().restrictFormattingCodes) {
+            if (withBypass
+                    && member.getRoles().stream()
+                            .anyMatch(
+                                    Utils.parseRoleList(
+                                                    this.integration.getGuild(),
+                                                    this.integration.getConfig()
+                                                            .formattingCodeRestrictionOverrideRoles)
+                                            ::contains)) {
+                return text;
+            }
+
+            if (this.integration.getConfig().formattingCodeReplacement.isEmpty()) {
+                text = Utils.removeFormattingCode(text);
+            } else {
+                text =
+                        Utils.replaceFormattingCode(
+                                text, this.integration.getConfig().formattingCodeReplacement);
+            }
+        }
+        return text;
     }
 
     public void onPlayerJoin(ServerPlayerEntity player) {
