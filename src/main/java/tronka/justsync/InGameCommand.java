@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.GameProfileArgumentType;
+import net.minecraft.server.PlayerConfigEntry;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -48,18 +49,18 @@ public class InGameCommand {
     }
 
     private int getLinkInfo(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
+        Collection<PlayerConfigEntry> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
         Collection<String> lines = new ArrayList<>();
-        for (GameProfile profile : profiles) {
-            Optional<PlayerLink> optionalLink = this.integration.getLinkManager().getDataOf(profile.getId());
+        for (PlayerConfigEntry profile : profiles) {
+            Optional<PlayerLink> optionalLink = this.integration.getLinkManager().getDataOf(profile.id());
             if (optionalLink.isEmpty()) {
-                lines.add("No records for " + profile.getName());
+                lines.add("No records for " + profile.name());
             } else {
                 Optional<Member> member = this.integration.getLinkManager().getDiscordOf(optionalLink.get());
                 if (member.isPresent()) {
                     lines.add(formatPlayerInfo(optionalLink.get(), member.get()));
                 } else {
-                    lines.add("Unable to load discord member for " + profile.getName());
+                    lines.add("Unable to load discord member for " + profile.name());
 
                 }
             }
@@ -140,10 +141,10 @@ public class InGameCommand {
     }
 
     private int unlinkSpecifiedPlayer(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
+        Collection<PlayerConfigEntry> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
         int count = 0;
-        for (GameProfile profile : profiles) {
-            if (this.integration.getLinkManager().unlinkPlayer(profile.getId())) {
+        for (PlayerConfigEntry profile : profiles) {
+            if (this.integration.getLinkManager().unlinkPlayer(profile.id())) {
                 count++;
             }
         }

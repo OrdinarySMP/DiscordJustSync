@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PlayerConfigEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
@@ -145,8 +146,8 @@ public class LinkManager {
         }
     }
 
-    public String getJoinError(GameProfile profile) {
-        Optional<Member> member = this.getDiscordOf(profile.getId());
+    public String getJoinError(PlayerConfigEntry profile) {
+        Optional<Member> member = this.getDiscordOf(profile.id());
         if (member.isEmpty()) {
             String code = this.generateLinkCode(profile);
             return this.integration.getConfig().kickMessages.kickLinkCode.formatted(code);
@@ -238,7 +239,7 @@ public class LinkManager {
         return Optional.of(request);
     }
 
-    public String generateLinkCode(GameProfile profile) {
+    public String generateLinkCode(PlayerConfigEntry profile) {
         if (this.linkRequests.size() >= PURGE_LIMIT) {
             this.purgeCodes();
         }
@@ -249,7 +250,7 @@ public class LinkManager {
         do {
             code = String.valueOf(RANDOM.nextInt(100000, 1000000)); // 6-digit code
         } while (this.linkRequests.containsKey(code));
-        this.linkRequests.put(code, new LinkRequest(profile.getId(), profile.getName(), expiryTime));
+        this.linkRequests.put(code, new LinkRequest(profile.id(), profile.name(), expiryTime));
         return code;
     }
 
