@@ -110,12 +110,13 @@ public final class Utils {
             return JustSyncApplication.getInstance().getFloodgateIntegration().getUsername(uuid);
         }
         ProfileResult result = JustSyncApplication.getInstance().getServer()
-            .getSessionService()
+            .getApiServices()
+            .sessionService()
             .fetchProfile(uuid, false);
         if (result == null) {
             return "unknown";
         }
-        return result.profile().getName();
+        return result.profile().name();
     }
 
     public static GameProfile fetchProfile(String name) {
@@ -206,7 +207,7 @@ public final class Utils {
         String y = matcher.group(2);
         String z = matcher.group(3);
         String dim = DIMENSION_MAP.getOrDefault(
-            player.getWorld().getRegistryKey(), "Unknown");
+            player.getEntityWorld().getRegistryKey(), "Unknown");
 
         return replacePlaceholdersWaypoint("Shared Location", "S", dim, x, y, z, config);
     }
@@ -318,7 +319,7 @@ public final class Utils {
     public static String getTextureId(ServerPlayerEntity player) {
         String textureId = null;
         try {
-            PropertyMap propertyMap = player.getGameProfile().getProperties();
+            PropertyMap propertyMap = player.getGameProfile().properties();
             String textureBase64 = propertyMap.get("textures").iterator().next().value();
             JsonObject json =
                     new Gson()
