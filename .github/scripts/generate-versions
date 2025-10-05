@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+versions="$(ls versions)"
+
+declare -A arr
+
+latest_release=$(curl -s https://piston-meta.mojang.com/mc/game/version_manifest_v2.json \
+    | jq -r '.latest.release')
+
+for i in $versions; do
+    last_version=$(grep "^last_minecraft_version" versions/"$i"/gradle.properties \
+        | cut -d = -f 2)
+    if [[ -z "$last_version" ]]; then
+        last_version="$latest_release"
+    fi
+    MAJOR_MINOR=$(echo "$i" | cut -d. -f1,2)
+    START_PATCH=$(echo "$i" | cut -d. -f3)
+    END_PATCH=$(echo "$last_version" | cut -d. -f3)
+
+    arr["$i"]=$(seq $START_PATCH $END_PATCH | awk -v mm="$MAJOR_MINOR" '{print mm "." $1}' | jq -R . | jq -s -c .)
+done
+
+# for key in ${!arr[@]}
+# do
+#     echo "[DEBUG] ${key}: ${arr[${key}]}"
+# done
+
+jq -n --argjson n "${#arr[@]}" '
+    reduce range($n) as $i ({};
+            .[$ARGS.positional[$i]] = [$ARGS.positional[$i+$n]]
+    )
+' --args "${!arr[@]}" "${arr[@]}" > versions.json
+
+echo "${!arr[@]}" | jq -c -r -R 'split(" ")'
+
