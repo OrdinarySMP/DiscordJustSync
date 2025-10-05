@@ -3,8 +3,8 @@ package tronka.justsync;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.UUID;
 
-import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -15,7 +15,6 @@ import net.dv8tion.jda.api.entities.Member;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.GameProfileArgumentType;
-import net.minecraft.server.PlayerConfigEntry;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -49,18 +48,20 @@ public class InGameCommand {
     }
 
     private int getLinkInfo(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        Collection<PlayerConfigEntry> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
+        Collection</*$ profile_class {*/net.minecraft.server.PlayerConfigEntry/*$}*/> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
         Collection<String> lines = new ArrayList<>();
-        for (PlayerConfigEntry profile : profiles) {
-            Optional<PlayerLink> optionalLink = this.integration.getLinkManager().getDataOf(profile.id());
+        for (/*$ profile_class {*/net.minecraft.server.PlayerConfigEntry/*$}*/ profile : profiles) {
+            UUID uuid = profile./*? if >= 1.21.9 {*/ id() /*?} else {*/ /*getId() *//*?}*/;
+            String profileName = profile./*? if >= 1.21.9 {*/ name() /*?} else {*/ /*getName() *//*?}*/;
+            Optional<PlayerLink> optionalLink = this.integration.getLinkManager().getDataOf(uuid);
             if (optionalLink.isEmpty()) {
-                lines.add("No records for " + profile.name());
+                lines.add("No records for " + profileName);
             } else {
                 Optional<Member> member = this.integration.getLinkManager().getDiscordOf(optionalLink.get());
                 if (member.isPresent()) {
                     lines.add(formatPlayerInfo(optionalLink.get(), member.get()));
                 } else {
-                    lines.add("Unable to load discord member for " + profile.name());
+                    lines.add("Unable to load discord member for " + profileName);
 
                 }
             }
@@ -141,10 +142,11 @@ public class InGameCommand {
     }
 
     private int unlinkSpecifiedPlayer(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        Collection<PlayerConfigEntry> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
+        Collection</*$ profile_class {*/net.minecraft.server.PlayerConfigEntry/*$}*/> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
         int count = 0;
-        for (PlayerConfigEntry profile : profiles) {
-            if (this.integration.getLinkManager().unlinkPlayer(profile.id())) {
+        for (/*$ profile_class {*/net.minecraft.server.PlayerConfigEntry/*$}*/ profile : profiles) {
+            UUID uuid = /*? if >= 1.21.9 {*/ profile.id() /*?} else {*/ /*profile.getId() *//*?}*/;
+            if (this.integration.getLinkManager().unlinkPlayer(uuid)) {
                 count++;
             }
         }

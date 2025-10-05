@@ -20,7 +20,6 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.PlayerConfigEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
@@ -146,8 +145,12 @@ public class LinkManager {
         }
     }
 
-    public String getJoinError(PlayerConfigEntry profile) {
+    public String getJoinError(/*$ profile_class {*/net.minecraft.server.PlayerConfigEntry/*$}*/ profile) {
+        //? if >= 1.21.9 {
         Optional<Member> member = this.getDiscordOf(profile.id());
+        //?} else {
+        /*Optional<Member> member = this.getDiscordOf(profile.getId());
+        *///?}
         if (member.isEmpty()) {
             String code = this.generateLinkCode(profile);
             return this.integration.getConfig().kickMessages.kickLinkCode.formatted(code);
@@ -239,7 +242,7 @@ public class LinkManager {
         return Optional.of(request);
     }
 
-    public String generateLinkCode(PlayerConfigEntry profile) {
+    public String generateLinkCode(/*$ profile_class {*/net.minecraft.server.PlayerConfigEntry/*$}*/ profile) {
         if (this.linkRequests.size() >= PURGE_LIMIT) {
             this.purgeCodes();
         }
@@ -250,7 +253,11 @@ public class LinkManager {
         do {
             code = String.valueOf(RANDOM.nextInt(100000, 1000000)); // 6-digit code
         } while (this.linkRequests.containsKey(code));
+        //? if >= 1.21.9 {
         this.linkRequests.put(code, new LinkRequest(profile.id(), profile.name(), expiryTime));
+        //?} else {
+        /*this.linkRequests.put(code, new LinkRequest(profile.getId(), profile.getName(), expiryTime));
+        *///?}
         return code;
     }
 
@@ -346,3 +353,4 @@ public class LinkManager {
         return allowJoiningMixedAccountTypesBypass;
     }
 }
+

@@ -1,9 +1,9 @@
 package tronka.justsync.mixin;
 
-import com.mojang.authlib.GameProfile;
 import java.net.SocketAddress;
+import java.util.UUID;
+
 import net.minecraft.network.ClientConnection;
-import net.minecraft.server.PlayerConfigEntry;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ConnectedClientData;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -19,19 +19,23 @@ import tronka.justsync.JustSyncApplication;
 public class PlayerManagerMixin {
 
     @Inject(method = "checkCanJoin", at = @At("HEAD"), cancellable = true)
-    private void canJoin(SocketAddress address, PlayerConfigEntry profile, CallbackInfoReturnable<Text> cir) {
+    private void canJoin(
+            SocketAddress address, 
+            /*$ profile_class {*/ net.minecraft.server.PlayerConfigEntry/*$}*/ profile,
+            CallbackInfoReturnable<Text> cir) {
         JustSyncApplication integration = JustSyncApplication.getInstance();
         if (!integration.isReady()) {
             cir.setReturnValue(Text.of("DiscordJS not ready, please try again in a few seconds."));
             return;
         }
-        if (!integration.getFloodgateIntegration().canJoinMixedAccountType(profile.id())) {
+        UUID uuid = profile./*? if >= 1.21.9 {*/ id() /*?} else {*/ /*getId() *//*?}*/;
+        if (!integration.getFloodgateIntegration().canJoinMixedAccountType(uuid)) {
             cir.setReturnValue(Text.of(
                 integration.getConfig().integrations.floodgate.joiningMixedAccountTypesKickMessage));
             return;
         }
 
-        if (integration.getLinkManager().canJoin(profile.id())) {
+        if (integration.getLinkManager().canJoin(uuid)) {
             return;
         }
 

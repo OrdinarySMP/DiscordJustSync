@@ -201,8 +201,9 @@ public class DiscordCommandHandler extends ListenerAdapter {
             hook.editOriginal("Could not find a player with that name").queue();
             return;
         }
-        String minecraftName = profile.name();
-        Optional<PlayerLink> data = this.integration.getLinkManager().getDataOf(profile.id());
+        UUID uuid = profile./*? if >= 1.21.9 {*/ id() /*?} else {*/ /*getId() *//*?}*/;
+        String minecraftName = profile./*? if >= 1.21.9 {*/ name() /*?} else {*/ /*getName() *//*?}*/;
+        Optional<PlayerLink> data = this.integration.getLinkManager().getDataOf(uuid);
         if (data.isEmpty()) {
             hook.editOriginal("Could not find a linked account").queue();
             return;
@@ -210,7 +211,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
         if (Objects.equals(subCommand, "get")) {
             Optional<Member> member = this.integration.getLinkManager().getDiscordOf(data.get());
             if (member.isPresent()) {
-                hook.editOriginal(profile.name() + " is linked to " + member.get().getAsMention()).queue();
+                hook.editOriginal(minecraftName + " is linked to " + member.get().getAsMention()).queue();
             } else {
                 hook.editOriginal("Could not find a linked discord account").queue();
             }

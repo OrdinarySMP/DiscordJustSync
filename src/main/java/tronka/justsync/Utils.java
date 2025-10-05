@@ -110,13 +110,17 @@ public final class Utils {
             return JustSyncApplication.getInstance().getFloodgateIntegration().getUsername(uuid);
         }
         ProfileResult result = JustSyncApplication.getInstance().getServer()
+            //? if >= 1.21.9 {
             .getApiServices()
             .sessionService()
+            //?} else {
+            /*.getSessionService()
+            *///?}
             .fetchProfile(uuid, false);
         if (result == null) {
             return "unknown";
         }
-        return result.profile().name();
+        return /*? if >= 1.21.9 {*/ result.profile().name() /*?} else {*/ /*result.profile().getName() *//*?}*/;
     }
 
     public static GameProfile fetchProfile(String name) {
@@ -202,12 +206,19 @@ public final class Utils {
         return message;
     }
 
-    private static String formatSharedLocationVoxel(Matcher matcher, Config config, ServerPlayerEntity player) {
+    private static String formatSharedLocationVoxel(
+            Matcher matcher, Config config, ServerPlayerEntity player) {
         String x = matcher.group(1);
         String y = matcher.group(2);
         String z = matcher.group(3);
-        String dim = DIMENSION_MAP.getOrDefault(
-            player.getEntityWorld().getRegistryKey(), "Unknown");
+        //? if >= 1.21.9 {
+        String dim = DIMENSION_MAP.getOrDefault(player.getEntityWorld().getRegistryKey(), "Unknown");
+        //?} else if >= 1.21.6 {
+        /*String dim = DIMENSION_MAP.getOrDefault(player.getWorld().getRegistryKey(), "Unknown");
+        *///?} else {
+        /*String dim =
+                DIMENSION_MAP.getOrDefault(player.getServerWorld().getRegistryKey(), "Unknown");
+        *///?}
 
         return replacePlaceholdersWaypoint("Shared Location", "S", dim, x, y, z, config);
     }
@@ -319,7 +330,11 @@ public final class Utils {
     public static String getTextureId(ServerPlayerEntity player) {
         String textureId = null;
         try {
+            //? if >= 1.21.9 {
             PropertyMap propertyMap = player.getGameProfile().properties();
+            //?} else {
+            /*PropertyMap propertyMap = player.getGameProfile().getProperties();
+            *///?}
             String textureBase64 = propertyMap.get("textures").iterator().next().value();
             JsonObject json =
                     new Gson()
