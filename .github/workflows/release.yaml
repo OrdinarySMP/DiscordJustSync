@@ -146,13 +146,12 @@ jobs:
           fi
       - name: Load dependency info into env
         run: |
-          deps='cat .github/resources/dependencies.json'
           echo "DEPENDENCIES<<EOF" >> $GITHUB_ENV
-          echo "$deps" >> "$GITHUB_ENV"
+          echo "$(cat .github/resources/dependencies.json)" >> "$GITHUB_ENV"
           echo "EOF" >> $GITHUB_ENV
 
       - name: Upload to Modrinth
-        if: steps.semantic-release.outputs.new_release_version != ''
+        if: needs.release-github.outputs.version != ''
         uses: cloudnode-pro/modrinth-publish@v2
         with:
           token: ${{ secrets.MODRINTH_TOKEN }}
