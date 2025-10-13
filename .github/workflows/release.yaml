@@ -33,7 +33,6 @@ jobs:
   build:
     needs: [release-dry]
     runs-on: ubuntu-latest
-    needs: [release-dry]
     steps:
       - name: checkout repository
         uses: actions/checkout@v5
@@ -145,6 +144,12 @@ jobs:
           else 
             echo -n "CHANGELOG=" >> "$GITHUB_ENV"
           fi
+      - name: Load dependency info into env
+        run: |
+          deps='cat .github/resources/dependencies.json'
+          echo "DEPENDENCIES<<EOF" >> $GITHUB_ENV
+          echo "$deps" >> "$GITHUB_ENV"
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Upload to Modrinth
         if: steps.semantic-release.outputs.new_release_version != ''
@@ -155,6 +160,8 @@ jobs:
           name: v${{ needs.release-github.outputs.version }}
           version: ${{ needs.release-github.outputs.version }}
           changelog: ${{ env.CHANGELOG }}
+          dependencies: |-
+            ${{ env.DEPENDENCIES }}
           loaders: |-
             fabric
           game-versions: |-
