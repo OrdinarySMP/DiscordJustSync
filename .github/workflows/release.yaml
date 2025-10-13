@@ -68,7 +68,12 @@ jobs:
         id: set-matrix
         run: |
           echo -n "versions=$(./.github/scripts/generate-versions)" >> "$GITHUB_OUTPUT"
-          pwd 
+      - name: persist json
+        uses: actions/upload-artifact@v4
+        with:
+          name: versions-json
+          path: versions.json
+
   release-github:
     name: Release GitHub
     needs: [build]
@@ -121,6 +126,11 @@ jobs:
         with:
           name: Artifacts
           path: artifacts
+      - name: Download versions json
+        uses: actions/download-artifact@v4
+        with:
+          name: versions-json
+          path: .
 
       - name: Load generated versions into env var
         env:

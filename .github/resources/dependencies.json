@@ -1,4 +1,7 @@
-[{
-"project_id": "placeholder-api",
-"dependency_type": "required"
-}]
+[
+  {
+    "mod_name (comment)": "placeholder api",
+    "project_id": "eXts2L7r",
+    "dependency_type": "required"
+  }
+]
