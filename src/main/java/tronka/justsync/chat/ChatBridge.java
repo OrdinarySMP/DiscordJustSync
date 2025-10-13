@@ -28,7 +28,7 @@ import tronka.justsync.config.Config;
 
 public class ChatBridge extends ListenerAdapter {
 
-    private static final String webhookId = "justsync-hook";
+    private static final String WEBHOOK_ID = "justsync-hook";
     private final JustSyncApplication integration;
     private TextChannel channel;
     private boolean stopped = false;
@@ -53,7 +53,7 @@ public class ChatBridge extends ListenerAdapter {
                 if (hook.isPresent()) {
                     this.setWebhook(hook.get());
                 } else {
-                    this.channel.createWebhook(webhookId).onSuccess(this::setWebhook).queue();
+                    this.channel.createWebhook(WEBHOOK_ID).onSuccess(this::setWebhook).queue();
                 }
             })).queue();
         }
@@ -220,6 +220,9 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     public void sendMcChatMessage(Text message) {
+        if (this.integration.getServer() == null) {
+            return;
+        }
         this.integration.getServer().getPlayerManager().broadcast(message, false);
     }
 
