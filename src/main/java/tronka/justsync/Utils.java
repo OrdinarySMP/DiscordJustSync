@@ -41,6 +41,8 @@ import tronka.justsync.config.Config;
 
 public final class Utils {
 
+
+
     private Utils() {
     }
 
@@ -49,17 +51,16 @@ public final class Utils {
     private static final Pattern URL_PATTERN = Pattern.compile(
         "https?://[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b[-a-zA-Z0-9()@:%_+.~#?&/=]*");
 
-    private static final Pattern SHARED_LOCATION_PATTERN =
-        Pattern.compile("^(?:\\s?)+\\[x:(-?\\d+), y:(-?\\d+), z:(-?\\d+)]$");
-    private static final Pattern SHARED_WAYPOINT_PATTERN =
-        Pattern.compile(
-            "^(?:\\s?)+\\[name:(.*?), x:(-?\\d+), y:(-?\\d+), z:(-?\\d+), dim:minecraft:(?:\\w+_)?(\\w+)(?:, icon:\\w+)?\\]$");
     private static final Map<RegistryKey<World>, String> DIMENSION_MAP =
         Map.of(
             World.OVERWORLD, "Overworld",
             World.NETHER, "Nether",
             World.END, "End"
         );
+    private static final Pattern VOXEL_NAME_PATTERN = Pattern.compile("name:([^,\\]]*)");
+    private static final Pattern VOXEL_DIMENSION_PATTERN = Pattern.compile("dim:minecraft:(?:\\w+_)?(\\w+)");
+    private static final Pattern VOXEL_COORDINATE_PATTERN = Pattern.compile("x:(-?\\d+), y:(-?\\d+), z:(-?\\d+)");
+
     private static final Pattern HUMAN_READABLE_MENTION_PATTERN = Pattern.compile("@(\\S+)");
 
 
@@ -187,30 +188,40 @@ public final class Utils {
         return username.replace("_", "\\_");
     }
 
-    public static String formatVoxel(
-        String message, Config config, ServerPlayerEntity player) {
-        if (!message.contains("[x:") && !message.contains("[name:")) {
+    public static String formatVoxel(String message, Config config, ServerPlayerEntity player) {
+        if ((!message.contains("[x:") && !message.contains("[name:")) || !message.contains("]")) {
             return message;
         }
 
-        Matcher sharedLocationMatcher = SHARED_LOCATION_PATTERN.matcher(message);
-        if (sharedLocationMatcher.find()) {
-            return formatSharedLocationVoxel(sharedLocationMatcher, config, player);
+        Matcher coordinatesMatcher = VOXEL_COORDINATE_PATTERN.matcher(message);
+        if (!coordinatesMatcher.find()) {
+            return message;
         }
 
-        Matcher sharedWaypointMatcher = SHARED_WAYPOINT_PATTERN.matcher(message);
-        if (sharedWaypointMatcher.find()) {
-            return formatSharedWaypointVoxel(sharedWaypointMatcher, config);
-        }
+        Matcher dimensionMatcher = VOXEL_DIMENSION_PATTERN.matcher(message);
+        Matcher nameMatcher = VOXEL_NAME_PATTERN.matcher(message);
 
-        return message;
+        String x = coordinatesMatcher.group(1);
+        String y = coordinatesMatcher.group(2);
+        String z = coordinatesMatcher.group(3);
+
+        nameMatcher.find();
+        dimensionMatcher.find();
+
+        return replacePlaceholdersWaypoint(
+                nameMatcher.hasMatch() ? nameMatcher.group(1) : "Shared Location",
+                nameMatcher.hasMatch() ? nameMatcher.group(1).substring(0, 1).toUpperCase() : "S",
+                dimensionMatcher.hasMatch()
+                        ? dimensionMatcher.group(1).substring(0, 1).toUpperCase()
+                                + dimensionMatcher.group(1).substring(1)
+                        : getPlayerDimension(player),
+                x,
+                y,
+                z,
+                config);
     }
 
-    private static String formatSharedLocationVoxel(
-            Matcher matcher, Config config, ServerPlayerEntity player) {
-        String x = matcher.group(1);
-        String y = matcher.group(2);
-        String z = matcher.group(3);
+    private static String getPlayerDimension(ServerPlayerEntity player) {
         //? if >= 1.21.9 {
         String dim = DIMENSION_MAP.getOrDefault(player.getEntityWorld().getRegistryKey(), "Unknown");
         //?} else if >= 1.21.6 {
@@ -219,20 +230,7 @@ public final class Utils {
         /*String dim =
                 DIMENSION_MAP.getOrDefault(player.getServerWorld().getRegistryKey(), "Unknown");
         *///?}
-
-        return replacePlaceholdersWaypoint("Shared Location", "S", dim, x, y, z, config);
-    }
-
-    private static String formatSharedWaypointVoxel(Matcher matcher, Config config) {
-        String name = matcher.group(1);
-        String x = matcher.group(2);
-        String y = matcher.group(3);
-        String z = matcher.group(4);
-        String dim = matcher.group(5).substring(0, 1).toUpperCase()
-            + matcher.group(5).substring(1);
-
-        return replacePlaceholdersWaypoint(name,
-            name.substring(0, 1).toUpperCase(), dim, x, y, z, config);
+        return dim;
     }
 
     public static String formatXaero(String message, Config config) {
