@@ -2,6 +2,7 @@ package tronka.justsync;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandOutput;
 import net.minecraft.server.command.ServerCommandSource;
@@ -15,8 +16,20 @@ public class DiscordCommandSender extends ServerCommandSource {
     private final String sender;
 
     public DiscordCommandSender(MinecraftServer server, String sender, Consumer<String> feedback) {
-        super(CommandOutput.DUMMY, Vec3d.ZERO, Vec2f.ZERO, server.getOverworld(), 4, "Discord-JustSync",
-            Text.of("Discord-JustSync"), server, null);
+        super(
+                CommandOutput.DUMMY,
+                Vec3d.ZERO,
+                Vec2f.ZERO,
+                server.getOverworld(),
+                //? if >= 1.21.11 {
+                net.minecraft.command.permission.LeveledPermissionPredicate.OWNERS,
+                //?} else {
+                /*4,
+                *///?}
+                "Discord-JustSync",
+                Text.of("Discord-JustSync"),
+                server,
+                null);
         this.feedbackConsumer = feedback;
         this.sender = sender;
     }

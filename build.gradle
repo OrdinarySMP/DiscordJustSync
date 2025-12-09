@@ -1,7 +1,7 @@
 plugins {
-    id 'fabric-loom' version '1.11-SNAPSHOT'
+    id 'fabric-loom' version '1.14-SNAPSHOT'
     id 'maven-publish'
-    id 'com.github.johnrengelman.shadow' version "8+"
+    id 'com.gradleup.shadow' version "9+"
 }
 
 group = project.maven_group
@@ -141,7 +141,7 @@ tasks.register("prodServer", net.fabricmc.loom.task.prod.ServerProductionRunTask
     def latestFabricApiVersion = null
     try {
         def xmlText = new URL(fabricApiMetadataUrl).text
-        def parsedXml = new XmlSlurper().parseText(xmlText)
+        def parsedXml = new groovy.xml.XmlSlurper().parseText(xmlText)
         def matchingVersions = parsedXml.versioning.versions.version.findAll {
             v -> v.text().endsWith("+${version}")
         }
