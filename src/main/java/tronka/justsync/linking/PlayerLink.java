@@ -79,7 +79,15 @@ public class PlayerLink {
 
     @Override
     public String toString() {
-        return "PlayerLink{" + "playerId=" + this.playerId + ", discordId=" + this.discordId + ", alts=" + this.alts + ", dataObj="
-            + this.dataObj + '}';
+        return "PlayerLink{"
+                + "playerId="
+                + this.playerId
+                + ", discordId="
+                + this.discordId
+                + ", alts="
+                + this.alts
+                + ", dataObj="
+                + this.dataObj
+                + '}';
     }
 }

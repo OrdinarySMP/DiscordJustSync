@@ -95,6 +95,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
                 }
                 event.reply(result).setEphemeral(true).queue();
             }
+            default -> {}
         }
     }
 

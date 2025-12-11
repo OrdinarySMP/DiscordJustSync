@@ -37,10 +37,10 @@ public class Config {
     @TomlComment("Time in seconds before sending a new message regardless if it is identical")
     public int stackMessagesTimeoutInSec = 60;
 
-    @Deprecated
+    @Deprecated(since = "1.8.0")
     @TomlIgnore
     public boolean formatWaypoints = true;
-    @Deprecated
+    @Deprecated(since = "1.8.0")
     @TomlIgnore
     public String waypointURL = "";
 
@@ -77,7 +77,7 @@ public class Config {
 
     public static Config loadConfig() {
         Path configDir = JustSyncApplication.getConfigFolder();
-        File configFile = configDir.resolve(JustSyncApplication.ModId + ".toml").toFile();
+        File configFile = configDir.resolve(JustSyncApplication.MOD_ID + ".toml").toFile();
         Config instance;
         if (configFile.exists()) {
             instance = new Toml().read(configFile).to(Config.class);
@@ -261,13 +261,13 @@ public class Config {
 
         public static class FloodGateIntegration {
             @TomlIgnore
-            @Deprecated
+            @Deprecated(since = "1.13.0")
             public boolean allowMixedAccountTypes = true;
             @TomlIgnore
-            @Deprecated
+            @Deprecated(since = "1.13.0")
             public List<String> allowMixedAccountTypesBypass= new ArrayList<>();
             @TomlIgnore
-            @Deprecated
+            @Deprecated(since = "1.13.0")
             public String mixedAccountTypeDenyMessage = "You are not allowed to mix account types on this server";
 
 
@@ -300,7 +300,7 @@ public class Config {
 
     public static class CommandSettings {
 
-        @Deprecated
+        @Deprecated(since = "1.10.0")
         @TomlIgnore
         public String consoleChannel = "";
 

@@ -55,7 +55,7 @@ public class DiscordLogger {
             return;
         }
         Optional<PlayerData> alt = optionalPlayerLink.get().getAlts().stream()
-            .filter((playerData) -> playerData.getId() == uuid).findFirst();
+            .filter(playerData -> playerData.getId() == uuid).findFirst();
         if (alt.isEmpty()) {
             LogUtils.getLogger().error("alt that was just added not found in playerlink");
             return;

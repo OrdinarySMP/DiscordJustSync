@@ -1,7 +1,6 @@
 package tronka.justsync.compat;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -24,7 +23,7 @@ import tronka.justsync.linking.PlayerLink;
 
 public class LuckPermsIntegration {
 
-    private static final Logger log = LoggerFactory.getLogger(LuckPermsIntegration.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LuckPermsIntegration.class);
     private final JustSyncApplication integration;
     private boolean loaded = false;
     private Map<Role, List<String>> syncedRoles = Map.of();
@@ -43,6 +42,7 @@ public class LuckPermsIntegration {
         for (Entry<String, List<String>> sync : config.integrations.luckPerms.syncedRoles.entrySet()) {
             Optional<Role> role = Utils.parseRole(this.integration.getGuild(), sync.getKey());
             role.ifPresent(value -> this.syncedRoles.put(value, sync.getValue()));
+            LOGGER.warn("Role with following id not found: {}", sync.getKey());
         }
     }
 
@@ -61,12 +61,12 @@ public class LuckPermsIntegration {
                         ? link.get().getAllUuids()
                         : List.of(link.get().getPlayerId());
 
-        uuids.forEach(uuid -> {
+        uuids.forEach(uuid -> 
             luckPerms.getUserManager().loadUser(uuid).thenAccept(user -> {
                 Map<String, Boolean> groups = this.getGroups(member);
                 applyGroups(user, groups);
-            });
-        });
+            })
+        );
     }
 
     public void removeAllSyncedRoles(UUID altUuid) {
@@ -78,29 +78,33 @@ public class LuckPermsIntegration {
         if (luckPerms == null) {
             return;
         }
-        uuids.forEach(uuid -> {
+        uuids.forEach(uuid -> 
             luckPerms.getUserManager().loadUser(uuid).thenAccept(user -> {
                 Map<String, Boolean> groups = new HashMap<>();
                 this.syncedRoles.values().forEach(groupList -> 
                     groupList.forEach(group -> groups.put(group, false))
                 );
                 applyGroups(user, groups);
-            });
-        });
+            })
+        );
     }
 
     private void applyGroups(User user, Map<String, Boolean> groups) {
         if (groups.isEmpty()) {
             return;
         }
+        LuckPerms luckPerms = this.getLuckPerms();
+        if (luckPerms == null) {
+            return;
+        }
         for (Entry<String, Boolean> group : groups.entrySet()) {
-            if (group.getValue()) {
+            if (group.getValue().booleanValue()) {
                 user.data().add(LuckPermsHelper.getNode(group.getKey()));
             } else {
                 user.data().remove(LuckPermsHelper.getNode(group.getKey()));
             }
         }
-        this.getLuckPerms().getUserManager().saveUser(user);
+        luckPerms.getUserManager().saveUser(user);
     }
 
     private Map<String, Boolean> getGroups(Member member) {
