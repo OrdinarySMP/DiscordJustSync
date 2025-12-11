@@ -42,7 +42,7 @@ public class JsonLinkData implements LinkData {
             this.links = new ArrayList<>();
         }
         this.links.forEach(link -> link.setDataObj(this));
-        System.out.println("Loaded " + this.links.size() + " player links");
+        LOGGER.info("Loaded {} player links", this.links.size());
     }
 
     public static LinkData from(File file) {

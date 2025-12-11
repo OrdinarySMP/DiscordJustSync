@@ -29,7 +29,7 @@ import tronka.justsync.linking.LinkManager;
 
 public class JustSyncApplication extends ListenerAdapter implements DedicatedServerModInitializer {
 
-    public static final String ModId = "discord-justsync";
+    public static final String MOD_ID = "discord-justsync";
     private static final Logger LOGGER = LogUtils.getLogger();
     private static JustSyncApplication instance;
     private final List<Consumer<Config>> configReloadHandlers = new ArrayList<>();
@@ -93,10 +93,13 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
         }
         try {
             this.jda.addEventListener(new DiscordCommandHandler(this));
-            this.jda.addEventListener(this.chatBridge = new ChatBridge(this));
-            this.jda.addEventListener(this.consoleBridge = new ConsoleBridge(this));
+            this.chatBridge = new ChatBridge(this);
+            this.jda.addEventListener(this.chatBridge);
+            this.consoleBridge = new ConsoleBridge(this);
+            this.jda.addEventListener(this.consoleBridge);
             this.linkManager = new LinkManager(this);
-            this.jda.addEventListener(this.timeoutManager = new TimeoutManager(this));
+            this.timeoutManager = new TimeoutManager(this);
+            this.jda.addEventListener(this.timeoutManager);
             this.discordLogger = new DiscordLogger(this);
             this.luckPermsIntegration = new LuckPermsIntegration(this);
             this.vanishIntegration = new VanishIntegration(this);

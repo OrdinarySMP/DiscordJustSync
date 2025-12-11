@@ -60,11 +60,12 @@ public class ConsoleBridge extends ListenerAdapter {
                 this.logRedirects.add(
                         new LogRedirect(channel, logRedirectChannel.redirectPrefixes));
             } else {
+                String join = String.join(", ", logRedirectChannel.redirectPrefixes);
                 LogUtils.getLogger()
                         .info(
                                 "Could not load log redirect: ID: \"{}\", redirects: [{}]",
                                 logRedirectChannel.channel,
-                                String.join(", ", logRedirectChannel.redirectPrefixes));
+                                join);
             }
         }
     }

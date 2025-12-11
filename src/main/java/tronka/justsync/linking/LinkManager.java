@@ -1,6 +1,5 @@
 package tronka.justsync.linking;
 
-import com.mojang.authlib.GameProfile;
 import com.mojang.logging.LogUtils;
 
 import java.util.ArrayList;
@@ -50,7 +49,7 @@ public class LinkManager {
 
     private void onConfigLoaded(Config config) {
         this.linkData = JsonLinkData.from(
-                JustSyncApplication.getConfigFolder().resolve(JustSyncApplication.ModId + ".player-links.json")
+                JustSyncApplication.getConfigFolder().resolve(JustSyncApplication.MOD_ID + ".player-links.json")
                         .toFile());
         this.requiredRoles = Utils.parseRoleList(this.integration.getGuild(),
                 this.integration.getConfig().linking.requiredRoles);
@@ -206,6 +205,10 @@ public class LinkManager {
             return false;
         }
         Optional<Member> member = this.getDiscordOf(playerLink);
+        if (member.isEmpty()) {
+            // should never occure
+            return false;
+        }
         List<Role> roles = new ArrayList<>(member.get().getRoles());
 
         roles.retainAll(this.allowMixedAccountTypesBypass);

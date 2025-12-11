@@ -75,6 +75,10 @@ public class FloodgateIntegration {
         PlayerLink playerLink = linkOptional.get();
 
         Optional<Member> member = linkManager.getDiscordOf(playerLink);
+        if (member.isEmpty()) {
+            // should never occure
+            return false;
+        }
         List<Role> roles = new ArrayList<>(member.get().getRoles());
 
         roles.retainAll(linkManager.getAllowJoiningMixedAccountTypesBypass());

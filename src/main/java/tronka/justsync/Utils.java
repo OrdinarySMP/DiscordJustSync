@@ -130,8 +130,7 @@ public final class Utils {
         }
         try {
             return fetchProfileData("https://api.mojang.com/users/profiles/minecraft/" + name);
-        } catch (IOException ignored) {
-        }
+        } catch (IOException ignored) {} // ignored
         try {
             return fetchProfileData("https://api.minetools.eu/uuid/" + name);
         } catch (IOException e) {
@@ -252,12 +251,21 @@ public final class Utils {
             return message;
         }
 
-        String dimension = messageParts.get(9).contains("overworld") ? "Overworld" :
-            messageParts.get(9).contains("nether") ? "Nether" : "End";
+        String dimension = getDimension(messageParts.get(9));
 
         return replacePlaceholdersWaypoint(messageParts.get(1),
             messageParts.get(2), dimension, Integer.toString(x),
             Integer.toString(y), Integer.toString(z), config);
+    }
+
+    private static String getDimension(String dimension) {
+        if (dimension.contains("overworld")) {
+            return "Overworld";
+        }
+        if (dimension.contains("nether")) {
+            return "Nether";
+        }
+        return "End";
     }
 
 
@@ -271,9 +279,9 @@ public final class Utils {
         return returnMessage.replace("%name%", name)
             .replace("%abbr%", abbr)
             .replace("%dimension%", dim)
-            .replaceAll("%x%", x)
-            .replaceAll("%y%", y)
-            .replaceAll("%z%", z);
+            .replace("%x%", x)
+            .replace("%y%", y)
+            .replace("%z%", z);
     }
 
     public static String replaceFormattingCode(String str, String replacement) {
@@ -348,8 +356,7 @@ public final class Utils {
                             .getAsString();
             textureId =
                     url.replace("http://textures.minecraft.net/texture/", "").replace(".png", "");
-        } catch (NoSuchElementException ignored) {
-        }
+        } catch (NoSuchElementException ignored) {} // ignored
 
         return textureId;
     }

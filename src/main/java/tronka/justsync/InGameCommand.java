@@ -42,9 +42,21 @@ public class InGameCommand {
     }
 
     private LiteralArgumentBuilder<ServerCommandSource> getInfoSubcommand() {
-        return CommandManager.literal("get").executes(this::getSelfLinkInfo)
-            .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile()).requires(Permissions.require("justsync.get", 4))
-                .requires(Permissions.require("justsync.get", 4)).executes(this::getLinkInfo));
+        return CommandManager.literal("get")
+                .executes(this::getSelfLinkInfo)
+                .then(
+                        CommandManager.argument("player", GameProfileArgumentType.gameProfile())
+                                .requires(
+                                        Permissions.require(
+                                                "justsync.get",
+                                                CompatUtil.getPermissionLevel(
+                                                        CompatUtil.PermissionLevel.ADMINS)))
+                                .requires(
+                                        Permissions.require(
+                                                "justsync.get",
+                                                CompatUtil.getPermissionLevel(
+                                                        CompatUtil.PermissionLevel.ADMINS)))
+                                .executes(this::getLinkInfo));
     }
 
     private int getLinkInfo(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -120,8 +132,11 @@ public class InGameCommand {
 
     private LiteralArgumentBuilder<ServerCommandSource> reloadSubcommand() {
         return CommandManager.literal("reload")
-            .requires(Permissions.require("justsync.reload", 4))
-            .executes(this::reloadConfigs);
+                .requires(
+                        Permissions.require(
+                                "justsync.reload",
+                                CompatUtil.getPermissionLevel(CompatUtil.PermissionLevel.OWNERS)))
+                .executes(this::reloadConfigs);
     }
 
     private int reloadConfigs(CommandContext<ServerCommandSource> context) {
@@ -133,12 +148,16 @@ public class InGameCommand {
 
     private LiteralArgumentBuilder<ServerCommandSource> unlinkSubcommand() {
         return CommandManager.literal("unlink")
-            .requires(Permissions.require("justsync.unlink", true))
-            .executes(this::unlinkSelf)
-            .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
-                .requires(Permissions.require("justsync.unlink.other", 4))
-                .executes(this::unlinkSpecifiedPlayer)
-            );
+                .requires(Permissions.require("justsync.unlink", true))
+                .executes(this::unlinkSelf)
+                .then(
+                        CommandManager.argument("player", GameProfileArgumentType.gameProfile())
+                                .requires(
+                                        Permissions.require(
+                                                "justsync.unlink.other",
+                                                CompatUtil.getPermissionLevel(
+                                                        CompatUtil.PermissionLevel.ADMINS)))
+                                .executes(this::unlinkSpecifiedPlayer));
     }
 
     private int unlinkSpecifiedPlayer(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
