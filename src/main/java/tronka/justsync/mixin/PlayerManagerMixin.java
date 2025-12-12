@@ -45,6 +45,9 @@ public class PlayerManagerMixin {
     @Inject(method = "placeNewPlayer", at = @At("HEAD"))
     private void onPlayerJoin(Connection connection, ServerPlayer player, CommonListenerCookie clientData,
         CallbackInfo ci) {
+        if (!JustSyncApplication.getInstance().isReady()) {
+            return;
+        }
         JustSyncApplication.getInstance().getLinkManager().onPlayerJoin(player);
         if (!JustSyncApplication.getInstance().getVanishIntegration().isVanished(player)) {
             JustSyncApplication.getInstance().getChatBridge().onPlayerJoin(player);

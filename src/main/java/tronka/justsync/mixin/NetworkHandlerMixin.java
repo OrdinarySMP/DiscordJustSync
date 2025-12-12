@@ -22,6 +22,9 @@ public class NetworkHandlerMixin {
 
     @Inject(method = "onDisconnect", at = @At("HEAD"))
     private void onPlayerLeave(DisconnectionDetails info, CallbackInfo ci) {
+        if (!JustSyncApplication.getInstance().isReady()) {
+            return;
+        }
         if (JustSyncApplication.getInstance().getVanishIntegration().isVanished(this.player)) {
             return;
         }
@@ -35,6 +38,9 @@ public class NetworkHandlerMixin {
     @Inject(method = "getSignedMessage", at = @At("RETURN"))
     private void onMessageValidated(ServerboundChatPacket packet, LastSeenMessages lastSeenMessages,
         CallbackInfoReturnable<PlayerChatMessage> cir) {
+        if (!JustSyncApplication.getInstance().isReady()) {
+            return;
+        }
         JustSyncApplication.getInstance().getChatBridge().onMcChatMessage(packet.message(), this.player);
     }
 

@@ -22,6 +22,9 @@ public class AdvancementMixin {
     @Inject(method = "award", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/PlayerAdvancements;markForVisibilityUpdate(Lnet/minecraft/advancements/AdvancementHolder;)V"))
     private void receiveAdvancement(AdvancementHolder advancementEntry, String criterionName,
         CallbackInfoReturnable<Boolean> cir) {
+        if (!JustSyncApplication.getInstance().isReady()) {
+            return;
+        }
         Advancement advancement = advancementEntry.value();
 
         if (advancement == null) {

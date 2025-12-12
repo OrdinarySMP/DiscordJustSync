@@ -13,6 +13,9 @@ public class ServerPlayerEntityMixin {
 
     @Inject(method = "die", at = @At("HEAD"))
     private void onDeath(DamageSource damageSource, CallbackInfo ci) {
+        if (!JustSyncApplication.getInstance().isReady()) {
+            return;
+        }
         JustSyncApplication.getInstance().getChatBridge()
             .onPlayerDeath((ServerPlayer) (Object) this, damageSource);
     }
