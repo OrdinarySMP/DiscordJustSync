@@ -100,9 +100,9 @@ public class DiscordCommandHandler extends ListenerAdapter {
     }
 
     private void listCommand(SlashCommandInteractionEvent event) {
-        List<String> namesList = this.integration.getServer().getPlayerManager().getPlayerList().stream()
+        List<String> namesList = this.integration.getServer().getPlayerList().getPlayers().stream()
                 .filter(player -> !this.integration.getVanishIntegration().isVanished(player))
-                .map(player -> player.getName().getLiteralString())
+                .map(player -> player.getName().tryCollapseToString())
                 .map(Utils::escapeUnderscores)
                 .toList();
 

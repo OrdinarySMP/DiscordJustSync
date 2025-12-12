@@ -13,7 +13,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.commands.CommandSourceStack;
 import tronka.justsync.chat.DiscordChatMessageSender;
 import tronka.justsync.config.Config;
 
@@ -70,7 +70,7 @@ public class ConsoleBridge extends ListenerAdapter {
         }
     }
 
-    public void onCommandExecute(ServerCommandSource source, String command) {
+    public void onCommandExecute(CommandSourceStack source, String command) {
         if (this.commandLogChannel == null) {
             return;
         }
@@ -79,7 +79,7 @@ public class ConsoleBridge extends ListenerAdapter {
         }
 
         if (source.getEntity() == null
-                && !source.getName().equals("Server")
+                && !source.getTextName().equals("Server")
                 && !this.integration.getConfig().commands.logCommandBlockCommands) {
             return;
         }
@@ -99,7 +99,7 @@ public class ConsoleBridge extends ListenerAdapter {
                         .getConfig()
                         .messages
                         .commandExecutedInfoText
-                        .replace("%user%", Utils.escapeUnderscores(source.getName()))
+                        .replace("%user%", Utils.escapeUnderscores(source.getTextName()))
                         .replace("%cmd%", command);
 
         if (this.messageSender == null || this.messageSender.hasChanged(message, null)) {
@@ -147,7 +147,7 @@ public class ConsoleBridge extends ListenerAdapter {
             });
             String inGameCommand = command.inGameAction.replace("%args%", commandArgs);
             try {
-                this.integration.getServer().getCommandManager().getDispatcher().execute(inGameCommand, commandSender);
+                this.integration.getServer().getCommands().getDispatcher().execute(inGameCommand, commandSender);
             } catch (CommandSyntaxException e) {
                 throw new RuntimeException(e);
             }

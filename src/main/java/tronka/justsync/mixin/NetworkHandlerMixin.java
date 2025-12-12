@@ -1,11 +1,11 @@
 package tronka.justsync.mixin;
 
-import net.minecraft.network.DisconnectionInfo;
-import net.minecraft.network.message.LastSeenMessageList;
-import net.minecraft.network.message.SignedMessage;
-import net.minecraft.network.packet.c2s.play.ChatMessageC2SPacket;
-import net.minecraft.server.network.ServerPlayNetworkHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.network.DisconnectionDetails;
+import net.minecraft.network.chat.LastSeenMessages;
+import net.minecraft.network.chat.PlayerChatMessage;
+import net.minecraft.network.protocol.game.ServerboundChatPacket;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -14,14 +14,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import tronka.justsync.JustSyncApplication;
 
-@Mixin(ServerPlayNetworkHandler.class)
+@Mixin(ServerGamePacketListenerImpl.class)
 public class NetworkHandlerMixin {
 
     @Shadow
-    public ServerPlayerEntity player;
+    public ServerPlayer player;
 
-    @Inject(method = "onDisconnected", at = @At("HEAD"))
-    private void onPlayerLeave(DisconnectionInfo info, CallbackInfo ci) {
+    @Inject(method = "onDisconnect", at = @At("HEAD"))
+    private void onPlayerLeave(DisconnectionDetails info, CallbackInfo ci) {
         if (JustSyncApplication.getInstance().getVanishIntegration().isVanished(this.player)) {
             return;
         }
@@ -33,9 +33,9 @@ public class NetworkHandlerMixin {
     }
 
     @Inject(method = "getSignedMessage", at = @At("RETURN"))
-    private void onMessageValidated(ChatMessageC2SPacket packet, LastSeenMessageList lastSeenMessages,
-        CallbackInfoReturnable<SignedMessage> cir) {
-        JustSyncApplication.getInstance().getChatBridge().onMcChatMessage(packet.chatMessage(), this.player);
+    private void onMessageValidated(ServerboundChatPacket packet, LastSeenMessages lastSeenMessages,
+        CallbackInfoReturnable<PlayerChatMessage> cir) {
+        JustSyncApplication.getInstance().getChatBridge().onMcChatMessage(packet.message(), this.player);
     }
 
 }

@@ -9,14 +9,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 import tronka.justsync.Utils;
 import tronka.justsync.config.Config;
 
 public class DiscordChatMessageSender {
 
     private final String message;
-    private final ServerPlayerEntity sender;
+    private final ServerPlayer sender;
     private final JDAWebhookClient webhookClient;
     private final TextChannel channel;
     private final Config config;
@@ -27,7 +27,7 @@ public class DiscordChatMessageSender {
     private CompletableFuture<Void> readyFuture;
 
     public DiscordChatMessageSender(JDAWebhookClient webhookClient, TextChannel channel, Config config, String message,
-        ServerPlayerEntity sender) {
+        ServerPlayer sender) {
         this.webhookClient = webhookClient;
         this.channel = channel;
         this.config = config;
@@ -36,7 +36,7 @@ public class DiscordChatMessageSender {
         this.repetitionCount = 0;
     }
 
-    public boolean hasChanged(String message, ServerPlayerEntity sender) {
+    public boolean hasChanged(String message, ServerPlayer sender) {
         return this.sender != sender || !message.equals(this.message);
     }
 
@@ -97,7 +97,7 @@ public class DiscordChatMessageSender {
 
     private String getMessage() {
         if (this.sender != null) {
-            return Utils.escapeUnderscores(this.sender.getName().getLiteralString()) + ": " + this.message;
+            return Utils.escapeUnderscores(this.sender.getName().tryCollapseToString()) + ": " + this.message;
         }
         return this.message;
     }
@@ -121,10 +121,10 @@ public class DiscordChatMessageSender {
             .exceptionally(this::handleFailure);
     }
 
-    private String getAvatarUrl(ServerPlayerEntity player) {
+    private String getAvatarUrl(ServerPlayer player) {
         String avatarUrl = this.config
                 .avatarUrl
-                .replace("%UUID%", player.getUuid().toString())
+                .replace("%UUID%", player.getUUID().toString())
                 .replace("%randomUUID%", UUID.randomUUID().toString());
         if (avatarUrl.contains("%textureId%")) {
             avatarUrl = avatarUrl.replace("%textureId%", Utils.getTextureId(player));
@@ -134,7 +134,7 @@ public class DiscordChatMessageSender {
 
     private void sendAsWebhook() {
         String avatarUrl = this.getAvatarUrl(this.sender);
-        WebhookMessage msg = new WebhookMessageBuilder().setUsername(this.sender.getName().getLiteralString())
+        WebhookMessage msg = new WebhookMessageBuilder().setUsername(this.sender.getName().tryCollapseToString())
             .setAvatarUrl(avatarUrl).setContent(this.message).build();
         this.readyFuture = this.webhookClient.send(msg).thenApply(ReadonlyMessage::getId)
             .thenAccept(this::updateMessage).exceptionally(this::handleFailure);

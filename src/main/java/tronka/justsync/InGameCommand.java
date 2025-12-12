@@ -13,12 +13,12 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.dv8tion.jda.api.entities.Member;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.command.argument.GameProfileArgumentType;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.GameProfileArgument;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import tronka.justsync.linking.PlayerData;
 import tronka.justsync.linking.PlayerLink;
 
@@ -31,21 +31,21 @@ public class InGameCommand {
         CommandRegistrationCallback.EVENT.register(this::register);
     }
 
-    private void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registry,
-        CommandManager.RegistrationEnvironment environment) {
+    private void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registry,
+        Commands.CommandSelection environment) {
         dispatcher.register(
-            CommandManager.literal("discord")
+            Commands.literal("discord")
                 .then(this.unlinkSubcommand())
                 .then(this.reloadSubcommand())
                 .then(this.getInfoSubcommand())
         );
     }
 
-    private LiteralArgumentBuilder<ServerCommandSource> getInfoSubcommand() {
-        return CommandManager.literal("get")
+    private LiteralArgumentBuilder<CommandSourceStack> getInfoSubcommand() {
+        return Commands.literal("get")
                 .executes(this::getSelfLinkInfo)
                 .then(
-                        CommandManager.argument("player", GameProfileArgumentType.gameProfile())
+                        Commands.argument("player", GameProfileArgument.gameProfile())
                                 .requires(
                                         Permissions.require(
                                                 "justsync.get",
@@ -59,10 +59,10 @@ public class InGameCommand {
                                 .executes(this::getLinkInfo));
     }
 
-    private int getLinkInfo(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        Collection</*$ profile_class {*/net.minecraft.server.PlayerConfigEntry/*$}*/> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
+    private int getLinkInfo(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Collection</*$ profile_class {*/net.minecraft.server.players.NameAndId/*$}*/> profiles = GameProfileArgument.getGameProfiles(context, "player");
         Collection<String> lines = new ArrayList<>();
-        for (/*$ profile_class {*/net.minecraft.server.PlayerConfigEntry/*$}*/ profile : profiles) {
+        for (/*$ profile_class {*/net.minecraft.server.players.NameAndId/*$}*/ profile : profiles) {
             UUID uuid = profile./*? if >= 1.21.9 {*/ id() /*?} else {*/ /*getId() *//*?}*/;
             String profileName = profile./*? if >= 1.21.9 {*/ name() /*?} else {*/ /*getName() *//*?}*/;
             Optional<PlayerLink> optionalLink = this.integration.getLinkManager().getDataOf(uuid);
@@ -79,22 +79,22 @@ public class InGameCommand {
             }
 
         }
-        context.getSource().sendFeedback(() -> Text.literal(String.join("\n", lines)), false);
+        context.getSource().sendSuccess(() -> Component.literal(String.join("\n", lines)), false);
         return 1;
     }
 
-    private int getSelfLinkInfo(CommandContext<ServerCommandSource> context) {
-        ServerPlayerEntity player = context.getSource().getPlayer();
+    private int getSelfLinkInfo(CommandContext<CommandSourceStack> context) {
+        ServerPlayer player = context.getSource().getPlayer();
         if (player == null) {
-            context.getSource().sendFeedback(() -> Text.literal("Player only!"),
+            context.getSource().sendSuccess(() -> Component.literal("Player only!"),
                 false);
             return 1;
         }
         Optional<PlayerLink> playerLinkOptional = this.integration.getLinkManager()
-            .getDataOf(player.getUuid());
+            .getDataOf(player.getUUID());
         if (playerLinkOptional.isEmpty()) {
-            context.getSource().sendFeedback(
-                () -> Text.literal("Player is not linked"),
+            context.getSource().sendSuccess(
+                () -> Component.literal("Player is not linked"),
                 false);
             return 1;
         }
@@ -104,15 +104,15 @@ public class InGameCommand {
             .getDiscordOf(playerLink.getPlayerId());
 
         if (member.isEmpty()) {
-            context.getSource().sendFeedback(
-                () -> Text.literal("Discord member not found"),
+            context.getSource().sendSuccess(
+                () -> Component.literal("Discord member not found"),
                 false);
             return 1;
         }
 
         String message = formatPlayerInfo(playerLink, member.get());
         context.getSource()
-            .sendFeedback(() -> Text.literal(message), false);
+            .sendSuccess(() -> Component.literal(message), false);
         return 1;
     }
 
@@ -130,8 +130,8 @@ public class InGameCommand {
         return message.toString();
     }
 
-    private LiteralArgumentBuilder<ServerCommandSource> reloadSubcommand() {
-        return CommandManager.literal("reload")
+    private LiteralArgumentBuilder<CommandSourceStack> reloadSubcommand() {
+        return Commands.literal("reload")
                 .requires(
                         Permissions.require(
                                 "justsync.reload",
@@ -139,19 +139,19 @@ public class InGameCommand {
                 .executes(this::reloadConfigs);
     }
 
-    private int reloadConfigs(CommandContext<ServerCommandSource> context) {
+    private int reloadConfigs(CommandContext<CommandSourceStack> context) {
         String result = this.integration.tryReloadConfig();
         final String feedback = result.isEmpty() ? "Successfully reloaded config!" : result;
-        context.getSource().sendFeedback(() -> Text.literal(feedback), result.isEmpty());
+        context.getSource().sendSuccess(() -> Component.literal(feedback), result.isEmpty());
         return 1;
     }
 
-    private LiteralArgumentBuilder<ServerCommandSource> unlinkSubcommand() {
-        return CommandManager.literal("unlink")
+    private LiteralArgumentBuilder<CommandSourceStack> unlinkSubcommand() {
+        return Commands.literal("unlink")
                 .requires(Permissions.require("justsync.unlink", true))
                 .executes(this::unlinkSelf)
                 .then(
-                        CommandManager.argument("player", GameProfileArgumentType.gameProfile())
+                        Commands.argument("player", GameProfileArgument.gameProfile())
                                 .requires(
                                         Permissions.require(
                                                 "justsync.unlink.other",
@@ -160,32 +160,32 @@ public class InGameCommand {
                                 .executes(this::unlinkSpecifiedPlayer));
     }
 
-    private int unlinkSpecifiedPlayer(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        Collection</*$ profile_class {*/net.minecraft.server.PlayerConfigEntry/*$}*/> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
+    private int unlinkSpecifiedPlayer(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Collection</*$ profile_class {*/net.minecraft.server.players.NameAndId/*$}*/> profiles = GameProfileArgument.getGameProfiles(context, "player");
         int count = 0;
-        for (/*$ profile_class {*/net.minecraft.server.PlayerConfigEntry/*$}*/ profile : profiles) {
+        for (/*$ profile_class {*/net.minecraft.server.players.NameAndId/*$}*/ profile : profiles) {
             UUID uuid = /*? if >= 1.21.9 {*/ profile.id() /*?} else {*/ /*profile.getId() *//*?}*/;
             if (this.integration.getLinkManager().unlinkPlayer(uuid)) {
                 count++;
             }
         }
         if (count > 0) {
-            context.getSource().sendFeedback(() -> Text.literal(
+            context.getSource().sendSuccess(() -> Component.literal(
                     "Successfully unlinked %d player(s)".formatted(profiles.size())),
                 false);
             return count;
         }
-        context.getSource().sendFeedback(() -> Text.literal("Found no linked players!"), false);
+        context.getSource().sendSuccess(() -> Component.literal("Found no linked players!"), false);
         return 0;
     }
 
-    private int unlinkSelf(CommandContext<ServerCommandSource> context) {
-        ServerPlayerEntity player = context.getSource().getPlayer();
+    private int unlinkSelf(CommandContext<CommandSourceStack> context) {
+        ServerPlayer player = context.getSource().getPlayer();
         if (player != null) {
-            this.integration.getLinkManager().unlinkPlayer(player.getUuid());
-            context.getSource().sendFeedback(() -> Text.literal("Unlinked!"), false);
+            this.integration.getLinkManager().unlinkPlayer(player.getUUID());
+            context.getSource().sendSuccess(() -> Component.literal("Unlinked!"), false);
         } else {
-            context.getSource().sendFeedback(() -> Text.literal("Player Only!"), false);
+            context.getSource().sendSuccess(() -> Component.literal("Player Only!"), false);
         }
         return 1;
     }

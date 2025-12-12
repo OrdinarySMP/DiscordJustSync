@@ -31,10 +31,9 @@ import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.world.World;
-
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
 import tronka.justsync.chat.TextReplacer;
 import tronka.justsync.config.Config;
@@ -51,11 +50,11 @@ public final class Utils {
     private static final Pattern URL_PATTERN = Pattern.compile(
         "https?://[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b[-a-zA-Z0-9()@:%_+.~#?&/=]*");
 
-    private static final Map<RegistryKey<World>, String> DIMENSION_MAP =
+    private static final Map<ResourceKey<Level>, String> DIMENSION_MAP =
         Map.of(
-            World.OVERWORLD, "Overworld",
-            World.NETHER, "Nether",
-            World.END, "End"
+            Level.OVERWORLD, "Overworld",
+            Level.NETHER, "Nether",
+            Level.END, "End"
         );
     private static final Pattern VOXEL_NAME_PATTERN = Pattern.compile("name:([^,\\]]*)");
     private static final Pattern VOXEL_DIMENSION_PATTERN = Pattern.compile("dim:minecraft:(?:\\w+_)?(\\w+)");
@@ -112,7 +111,7 @@ public final class Utils {
         }
         ProfileResult result = JustSyncApplication.getInstance().getServer()
             //? if >= 1.21.9 {
-            .getApiServices()
+            .services()
             .sessionService()
             //?} else {
             /*.getSessionService()
@@ -187,7 +186,7 @@ public final class Utils {
         return username.replace("_", "\\_");
     }
 
-    public static String formatVoxel(String message, Config config, ServerPlayerEntity player) {
+    public static String formatVoxel(String message, Config config, ServerPlayer player) {
         if ((!message.contains("[x:") && !message.contains("[name:")) || !message.contains("]")) {
             return message;
         }
@@ -220,16 +219,8 @@ public final class Utils {
                 config);
     }
 
-    private static String getPlayerDimension(ServerPlayerEntity player) {
-        //? if >= 1.21.9 {
-        String dim = DIMENSION_MAP.getOrDefault(player.getEntityWorld().getRegistryKey(), "Unknown");
-        //?} else if >= 1.21.6 {
-        /*String dim = DIMENSION_MAP.getOrDefault(player.getWorld().getRegistryKey(), "Unknown");
-        *///?} else {
-        /*String dim =
-                DIMENSION_MAP.getOrDefault(player.getServerWorld().getRegistryKey(), "Unknown");
-        *///?}
-        return dim;
+    private static String getPlayerDimension(ServerPlayer player) {
+        return DIMENSION_MAP.getOrDefault(player.level().dimension(), "Unknown");
     }
 
     public static String formatXaero(String message, Config config) {
@@ -307,7 +298,7 @@ public final class Utils {
             .replaceAll("<@&\\d+>", "@role-ping");
     }
 
-    public static String formatMentions(String message, JustSyncApplication integration, ServerPlayerEntity player) {
+    public static String formatMentions(String message, JustSyncApplication integration, ServerPlayer player) {
         Matcher matcher = HUMAN_READABLE_MENTION_PATTERN.matcher(message);
         return matcher.replaceAll(match ->
             integration.getGuild().getMembersByEffectiveName(match.group(1), true)
@@ -323,7 +314,7 @@ public final class Utils {
                         if (player == null) {
                             return false;
                         }
-                        Optional<Member> member = integration.getLinkManager().getDiscordOf(player.getUuid());
+                        Optional<Member> member = integration.getLinkManager().getDiscordOf(player.getUUID());
                         return member.map(m -> m.hasPermission(Permission.MESSAGE_MENTION_EVERYONE)).orElse(false);
                     })
                     .findFirst()
@@ -333,7 +324,7 @@ public final class Utils {
         );
     }
 
-    public static String getTextureId(ServerPlayerEntity player) {
+    public static String getTextureId(ServerPlayer player) {
         String textureId = null;
         try {
             //? if >= 1.21.9 {
