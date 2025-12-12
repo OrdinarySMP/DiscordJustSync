@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -36,6 +37,8 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
     private JDA jda;
     private Guild guild;
     private MinecraftServer server;
+    private AtomicBoolean initialized = new AtomicBoolean(false);
+    private boolean jdaReady = false;
     private boolean ready = false;
     private ConsoleBridge consoleBridge;
     private ChatBridge chatBridge;
@@ -61,7 +64,12 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
         if (this.config.botToken == null || this.config.botToken.length() < 20) {
             throw new RuntimeException("Please enter a valid bot token in the Discord-JS config file in " + getConfigFolder().toAbsolutePath());
         }
-        ServerLifecycleEvents.SERVER_STARTING.register(s -> this.server = s);
+        ServerLifecycleEvents.SERVER_STARTING.register(s -> {
+            this.server = s;
+            if (this.jdaReady) {
+                this.initializeMod();
+            }
+        });
         ServerLifecycleEvents.SERVER_STOPPED.register(this::onServerStopped);
         Thread jdaThread = new Thread(this::startJDA);
         new InGameCommand(this);
@@ -87,6 +95,16 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
 
     @Override
     public void onReady(@NotNull ReadyEvent event) {
+        this.jdaReady = true;
+        if (this.server != null) {
+            this.initializeMod();
+        }
+    }
+
+    private void initializeMod() {
+        if (!this.initialized.compareAndSet(false, true)) {
+            return;
+        }
         String reloadResult = this.tryReloadConfig();
         if (!reloadResult.isEmpty()) {
             throw new RuntimeException(reloadResult);

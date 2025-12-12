@@ -15,6 +15,9 @@ public class CommandManagerMixin {
 
     @Inject(method = "performCommand", at = @At("HEAD"))
     private void onExecuteCommand(ParseResults<CommandSourceStack> parseResults, String command, CallbackInfo ci) {
+        if (!JustSyncApplication.getInstance().isReady()) {
+            return;
+        }
         JustSyncApplication.getInstance().getConsoleBridge()
             .onCommandExecute(parseResults.getContext().getSource(), command);
         JustSyncApplication.getInstance().getChatBridge()
