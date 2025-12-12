@@ -18,10 +18,10 @@ public class CompatUtil {
         }
     }
 
-    // ? if >= 1.21.11 {
-    public static net.minecraft.command.permission.PermissionLevel getPermissionLevel(
+    //? if >= 1.21.11 {
+    public static net.minecraft.server.permissions.PermissionLevel getPermissionLevel(
             PermissionLevel level) {
-        return net.minecraft.command.permission.PermissionLevel.fromLevel(level.level);
+        return net.minecraft.server.permissions.PermissionLevel.byId(level.level);
     }
     //?} else {
     /*public static int getPermissionLevel(PermissionLevel level) {

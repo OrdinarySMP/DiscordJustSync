@@ -2,32 +2,31 @@ package tronka.justsync;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
+import net.minecraft.commands.CommandSource;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.CommandOutput;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.Vec2f;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.phys.Vec2;
+import net.minecraft.world.phys.Vec3;
 
-public class DiscordCommandSender extends ServerCommandSource {
+public class DiscordCommandSender extends CommandSourceStack {
 
     private final Consumer<String> feedbackConsumer;
     private final String sender;
 
     public DiscordCommandSender(MinecraftServer server, String sender, Consumer<String> feedback) {
         super(
-                CommandOutput.DUMMY,
-                Vec3d.ZERO,
-                Vec2f.ZERO,
-                server.getOverworld(),
+                CommandSource.NULL,
+                Vec3.ZERO,
+                Vec2.ZERO,
+                server.overworld(),
                 //? if >= 1.21.11 {
-                net.minecraft.command.permission.LeveledPermissionPredicate.OWNERS,
+                net.minecraft.server.permissions.LevelBasedPermissionSet.OWNER,
                 //?} else {
                 /*4,
                 *///?}
                 "Discord-JustSync",
-                Text.of("Discord-JustSync"),
+                Component.nullToEmpty("Discord-JustSync"),
                 server,
                 null);
         this.feedbackConsumer = feedback;
@@ -35,13 +34,13 @@ public class DiscordCommandSender extends ServerCommandSource {
     }
 
     @Override
-    public void sendFeedback(Supplier<Text> feedbackSupplier, boolean broadcastToOps) {
+    public void sendSuccess(Supplier<Component> feedbackSupplier, boolean broadcastToOps) {
         String message = feedbackSupplier.get().getString();
         this.feedbackConsumer.accept(message);
     }
 
     @Override
-    public void sendError(Text message) {
+    public void sendFailure(Component message) {
         this.feedbackConsumer.accept(message.getString());
     }
 

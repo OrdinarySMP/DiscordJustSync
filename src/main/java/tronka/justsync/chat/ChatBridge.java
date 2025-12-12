@@ -15,12 +15,12 @@ import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.minecraft.advancement.AdvancementDisplay;
-import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.advancements.DisplayInfo;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import org.jetbrains.annotations.NotNull;
 import tronka.justsync.JustSyncApplication;
 import tronka.justsync.Utils;
@@ -145,27 +145,27 @@ public class ChatBridge extends ListenerAdapter {
         return text;
     }
 
-    public void onPlayerJoin(ServerPlayerEntity player) {
+    public void onPlayerJoin(ServerPlayer player) {
         this.onPlayerJoin(player, false);
     }
 
-    public void onPlayerJoin(ServerPlayerEntity player, boolean vanish) {
+    public void onPlayerJoin(ServerPlayer player, boolean vanish) {
         this.sendMessageToDiscord(this.integration.getConfig().messages.playerJoinMessage.replace("%user%",
             Utils.escapeUnderscores(player.getName().getString())), null, player);
         this.updateRichPresence(vanish ? 0 : 1);
     }
 
-    public void onPlayerTimeOut(ServerPlayerEntity player) {
+    public void onPlayerTimeOut(ServerPlayer player) {
         this.sendMessageToDiscord(this.integration.getConfig().messages.playerTimeOutMessage.replace("%user%",
                 Utils.escapeUnderscores(player.getName().getString())), null, player);
         this.updateRichPresence(-1);
     }
 
-    public void onPlayerLeave(ServerPlayerEntity player) {
+    public void onPlayerLeave(ServerPlayer player) {
         this.onPlayerLeave(player, false);
     }
 
-    public void onPlayerLeave(ServerPlayerEntity player, boolean vanish) {
+    public void onPlayerLeave(ServerPlayer player, boolean vanish) {
         if (this.stopped) {
             return;
         }
@@ -184,11 +184,11 @@ public class ChatBridge extends ListenerAdapter {
             return;
         }
         long playerCount;
-        if (this.integration.getServer() == null || this.integration.getServer().getPlayerManager() == null) {
+        if (this.integration.getServer() == null || this.integration.getServer().getPlayerList() == null) {
             playerCount = 0;
         } else {
-            playerCount = this.integration.getServer().getPlayerManager()
-                    .getPlayerList().stream()
+            playerCount = this.integration.getServer().getPlayerList()
+                    .getPlayers().stream()
                     .filter(p -> !this.integration.getVanishIntegration().isVanished(p))
                     .count() + modifier;
         }
@@ -200,9 +200,9 @@ public class ChatBridge extends ListenerAdapter {
         }), false);
     }
 
-    public void onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
+    public void onPlayerDeath(ServerPlayer player, DamageSource source) {
         if (this.integration.getConfig().broadCastDeathMessages) {
-            String message = source.getDeathMessage(player).getString();
+            String message = source.getLocalizedDeathMessage(player).getString();
             if (message.equals("death.attack.badRespawnPoint")) {
                 message = "%s was killed by [Intentional Mod Design]".formatted(player.getName().getString());
             }
@@ -210,8 +210,8 @@ public class ChatBridge extends ListenerAdapter {
         }
     }
 
-    public void onReceiveAdvancement(ServerPlayerEntity player, AdvancementDisplay advancement) {
-        if (this.integration.getConfig().announceAdvancements && advancement.shouldAnnounceToChat()) {
+    public void onReceiveAdvancement(ServerPlayer player, DisplayInfo advancement) {
+        if (this.integration.getConfig().announceAdvancements && advancement.shouldAnnounceChat()) {
             this.sendMessageToDiscord(this.integration.getConfig().messages.advancementMessage.replace("%user%",
                     Utils.escapeUnderscores(player.getName().getString()))
                 .replace("%title%", advancement.getTitle().getString())
@@ -219,11 +219,11 @@ public class ChatBridge extends ListenerAdapter {
         }
     }
 
-    public void sendMcChatMessage(Text message) {
+    public void sendMcChatMessage(Component message) {
         if (this.integration.getServer() == null) {
             return;
         }
-        this.integration.getServer().getPlayerManager().broadcast(message, false);
+        this.integration.getServer().getPlayerList().broadcastSystemMessage(message, false);
     }
 
     private void onServerStopping(MinecraftServer minecraftServer) {
@@ -232,7 +232,7 @@ public class ChatBridge extends ListenerAdapter {
     }
 
 
-    public void onMcChatMessage(String message, ServerPlayerEntity player) {
+    public void onMcChatMessage(String message, ServerPlayer player) {
         if (this.integration.getConfig().waypoints.formatWaypoints) {
             message = Utils.formatXaero(message, this.integration.getConfig());
             message = Utils.formatVoxel(message, this.integration.getConfig(), player);
@@ -240,14 +240,14 @@ public class ChatBridge extends ListenerAdapter {
         this.sendMessageToDiscord(message, player, player);
     }
 
-    private void sendMessageToDiscord(String message, ServerPlayerEntity sender, ServerPlayerEntity connectedPlayer) {
+    private void sendMessageToDiscord(String message, ServerPlayer sender, ServerPlayer connectedPlayer) {
         if (connectedPlayer != null && this.integration.getVanishIntegration().isVanished(connectedPlayer)) {
             return;
         }
         this.sendMessageToDiscordUnchecked(message, sender);
     }
 
-    private void sendMessageToDiscordUnchecked(String message, ServerPlayerEntity sender) {
+    private void sendMessageToDiscordUnchecked(String message, ServerPlayer sender) {
         if (message.trim().isEmpty()) {
             return;
         }
@@ -268,18 +268,18 @@ public class ChatBridge extends ListenerAdapter {
         }
     }
 
-    public void onCommandExecute(ServerCommandSource source, String command) {
+    public void onCommandExecute(CommandSourceStack source, String command) {
         if (!command.startsWith("me") && !command.startsWith("say")) {
             return;
         }
-        ServerPlayerEntity sender;
+        ServerPlayer sender;
         String prefix;
-        if (source.getEntity() instanceof ServerPlayerEntity player) {
+        if (source.getEntity() instanceof ServerPlayer player) {
             sender = player;
             prefix = "";
         } else {
             sender = null;
-            prefix = Utils.escapeUnderscores(source.getName()) + ": ";
+            prefix = Utils.escapeUnderscores(source.getTextName()) + ": ";
         }
         String data = command.split(" ", 2)[1];
         String message;

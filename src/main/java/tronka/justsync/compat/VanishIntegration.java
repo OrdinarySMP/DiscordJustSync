@@ -3,7 +3,7 @@ package tronka.justsync.compat;
 import me.drex.vanish.api.VanishAPI;
 import me.drex.vanish.api.VanishEvents;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 import tronka.justsync.JustSyncApplication;
 import tronka.justsync.config.Config;
 
@@ -21,7 +21,7 @@ public class VanishIntegration {
         VanishEvents.VANISH_EVENT.register(this::onVanishChanged);
     }
 
-    private void onVanishChanged(ServerPlayerEntity player, boolean isVanished) {
+    private void onVanishChanged(ServerPlayer player, boolean isVanished) {
         if (!this.loaded) {
             return;
         }
@@ -37,7 +37,7 @@ public class VanishIntegration {
     }
 
 
-    public boolean isVanished(ServerPlayerEntity player) {
+    public boolean isVanished(ServerPlayer player) {
         return this.loaded && VanishAPI.isVanished(player);
     }
 }

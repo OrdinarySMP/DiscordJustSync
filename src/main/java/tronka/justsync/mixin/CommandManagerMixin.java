@@ -2,19 +2,19 @@ package tronka.justsync.mixin;
 
 
 import com.mojang.brigadier.ParseResults;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import tronka.justsync.JustSyncApplication;
 
-@Mixin(CommandManager.class)
+@Mixin(Commands.class)
 public class CommandManagerMixin {
 
-    @Inject(method = "execute", at = @At("HEAD"))
-    private void onExecuteCommand(ParseResults<ServerCommandSource> parseResults, String command, CallbackInfo ci) {
+    @Inject(method = "performCommand", at = @At("HEAD"))
+    private void onExecuteCommand(ParseResults<CommandSourceStack> parseResults, String command, CallbackInfo ci) {
         JustSyncApplication.getInstance().getConsoleBridge()
             .onCommandExecute(parseResults.getContext().getSource(), command);
         JustSyncApplication.getInstance().getChatBridge()

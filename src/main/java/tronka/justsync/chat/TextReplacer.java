@@ -6,7 +6,7 @@ import eu.pb4.placeholders.api.parsers.ParserBuilder;
 import eu.pb4.placeholders.api.parsers.TagLikeParser;
 import java.util.HashMap;
 import java.util.Map;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 public class TextReplacer {
 
@@ -40,7 +40,7 @@ public class TextReplacer {
         return this.builder.build();
     }
 
-    public Text apply(String text) {
+    public Component apply(String text) {
         return this.getParser().parseNode(text).toText();
     }
 

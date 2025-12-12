@@ -5,8 +5,7 @@ import com.mojang.authlib.GameProfile;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.server.network.ServerPlayerEntity;
-
+import net.minecraft.server.level.ServerPlayer;
 import org.geysermc.floodgate.api.FloodgateApi;
 import tronka.justsync.JustSyncApplication;
 import tronka.justsync.linking.LinkManager;
@@ -91,7 +90,7 @@ public class FloodgateIntegration {
         boolean currentIsBedrock = this.isBedrock(id);
 
         for (UUID uuid : uuids) {
-            ServerPlayerEntity player = this.integration.getServer().getPlayerManager().getPlayer(uuid);
+            ServerPlayer player = this.integration.getServer().getPlayerList().getPlayer(uuid);
             if ((player != null) && (this.isBedrock(uuid) != currentIsBedrock)) {
                 return false;
             }

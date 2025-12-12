@@ -18,10 +18,9 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-
+import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 import tronka.justsync.JustSyncApplication;
 import tronka.justsync.Utils;
@@ -119,8 +118,8 @@ public class LinkManager {
         return !this.integration.getConfig().linking.disallowTimeoutMembersToJoin || !member.get().isTimedOut();
     }
 
-    public void onPlayerJoin(ServerPlayerEntity player) {
-        Optional<PlayerLink> dataOptional = this.linkData.getPlayerLink(player.getUuid());
+    public void onPlayerJoin(ServerPlayer player) {
+        Optional<PlayerLink> dataOptional = this.linkData.getPlayerLink(player.getUUID());
         if (dataOptional.isEmpty()) {
             return;
         }
@@ -134,7 +133,7 @@ public class LinkManager {
             return;
         }
 
-        if (data.getPlayerId().equals(player.getUuid()) && this.integration.getConfig().linking.renameOnJoin
+        if (data.getPlayerId().equals(player.getUUID()) && this.integration.getConfig().linking.renameOnJoin
                 && PermissionUtil.checkPermission(this.integration.getGuild().getSelfMember(),
                         Permission.NICKNAME_MANAGE)) {
             member.modifyNickname(player.getName().getString()).queue();
@@ -144,7 +143,7 @@ public class LinkManager {
         }
     }
 
-    public String getJoinError(/*$ profile_class {*/net.minecraft.server.PlayerConfigEntry/*$}*/ profile) {
+    public String getJoinError(/*$ profile_class {*/net.minecraft.server.players.NameAndId/*$}*/ profile) {
         //? if >= 1.21.9 {
         Optional<Member> member = this.getDiscordOf(profile.id());
         //?} else {
@@ -245,7 +244,7 @@ public class LinkManager {
         return Optional.of(request);
     }
 
-    public String generateLinkCode(/*$ profile_class {*/net.minecraft.server.PlayerConfigEntry/*$}*/ profile) {
+    public String generateLinkCode(/*$ profile_class {*/net.minecraft.server.players.NameAndId/*$}*/ profile) {
         if (this.linkRequests.size() >= PURGE_LIMIT) {
             this.purgeCodes();
         }
@@ -338,9 +337,9 @@ public class LinkManager {
         if (server == null) {
             return;
         }
-        ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
+        ServerPlayer player = server.getPlayerList().getPlayer(uuid);
         if (player != null) {
-            player.networkHandler.disconnect(Text.of(reason));
+            player.connection.disconnect(Component.nullToEmpty(reason));
         }
     }
 
