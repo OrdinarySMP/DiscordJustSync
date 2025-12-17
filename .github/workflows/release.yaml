@@ -146,7 +146,7 @@ jobs:
           echo -n "FILENAME=$filename" >> "$GITHUB_ENV"
       - name: Load changelog into env
         run: |
-          most_recent_version=$(ls versions | sort | tail -1)
+          most_recent_version=$(ls versions | sort -V | tail -1)
           if [[ "$most_recent_version" = "${{ matrix.version }}" ]]; then
             echo "CHANGELOG<<EOF" >> $GITHUB_ENV
             echo "${{ needs.release-github.outputs.release-notes }}" >> $GITHUB_ENV
