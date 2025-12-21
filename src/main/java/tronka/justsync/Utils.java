@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -47,6 +46,7 @@ public final class Utils {
 
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Gson gson = new Gson();
+    private static final String DEFAULT_STEVE_TEXTURE_ID = "989bf1511ab84c7cbbf3545af36b87dd";
     private static final Pattern URL_PATTERN = Pattern.compile(
         "https?://[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b[-a-zA-Z0-9()@:%_+.~#?&/=]*");
 
@@ -347,8 +347,10 @@ public final class Utils {
                             .getAsString();
             textureId =
                     url.replace("http://textures.minecraft.net/texture/", "").replace(".png", "");
-        } catch (NoSuchElementException ignored) {} // ignored
+        } catch (Exception ignored) {
+            // If texture ID cannot be retrieved, fall back to default Steve texture ID
+        }
 
-        return textureId;
+        return textureId != null ? textureId : DEFAULT_STEVE_TEXTURE_ID;
     }
 }
