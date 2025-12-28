@@ -324,7 +324,7 @@ public final class Utils {
         );
     }
 
-    public static String getTextureId(ServerPlayer player) {
+    public static Optional<String> getTextureId(ServerPlayer player) {
         String textureId = null;
         try {
             //? if >= 1.21.9 {
@@ -349,6 +349,6 @@ public final class Utils {
                     url.replace("http://textures.minecraft.net/texture/", "").replace(".png", "");
         } catch (NoSuchElementException ignored) {} // ignored
 
-        return textureId;
+        return Optional.ofNullable(textureId);
     }
 }

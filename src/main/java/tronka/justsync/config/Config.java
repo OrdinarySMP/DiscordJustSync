@@ -30,6 +30,8 @@ public class Config {
         "%textureId% - texture id instead of uuid (for use with e.g. SkinsRestorer)"
     })
     public String avatarUrl = "https://minotar.net/helm/%UUID%?randomuuid=%randomUUID%";
+    @TomlComment("The texture id used when no texture id was found (default is steve)")
+    public String defaultAvatarTextureId = "989bf1511ab84c7cbbf3545af36b87dd";
 
 
     @TomlComment("Combine multiple identical consecutive messages into one Discord message to reduce spam")

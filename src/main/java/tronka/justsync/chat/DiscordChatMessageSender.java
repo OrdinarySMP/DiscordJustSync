@@ -4,6 +4,8 @@ import club.minnced.discord.webhook.external.JDAWebhookClient;
 import club.minnced.discord.webhook.receive.ReadonlyMessage;
 import club.minnced.discord.webhook.send.WebhookMessage;
 import club.minnced.discord.webhook.send.WebhookMessageBuilder;
+
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -127,7 +129,10 @@ public class DiscordChatMessageSender {
                 .replace("%UUID%", player.getUUID().toString())
                 .replace("%randomUUID%", UUID.randomUUID().toString());
         if (avatarUrl.contains("%textureId%")) {
-            avatarUrl = avatarUrl.replace("%textureId%", Utils.getTextureId(player));
+            Optional<String> textureId = Utils.getTextureId(player);
+            avatarUrl =
+                    avatarUrl.replace(
+                            "%textureId%", textureId.orElse(this.config.defaultAvatarTextureId));
         }
         return avatarUrl;
     }
