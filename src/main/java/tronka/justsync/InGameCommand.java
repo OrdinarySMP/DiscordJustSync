@@ -194,6 +194,7 @@ public class InGameCommand {
 
     private LiteralArgumentBuilder<CommandSourceStack> textMsgSubCommand() {
         return Commands.literal("textmsg")
+                .requires(Permissions.require("justsync.textmsg", CompatUtil.getPermissionLevel(CompatUtil.PermissionLevel.ADMINS)))
                 .then(Commands.argument("message", StringArgumentType.greedyString())
                 .executes(this::textMsg));
     }
