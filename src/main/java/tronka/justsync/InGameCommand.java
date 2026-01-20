@@ -22,7 +22,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import tronka.justsync.linking.PlayerData;
 import tronka.justsync.linking.PlayerLink;
-import tronka.justsync.JustSyncApplication;
 
 public class InGameCommand {
 
