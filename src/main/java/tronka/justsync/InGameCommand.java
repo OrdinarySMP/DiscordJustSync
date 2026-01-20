@@ -10,6 +10,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.dv8tion.jda.api.entities.Member;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -21,6 +22,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import tronka.justsync.linking.PlayerData;
 import tronka.justsync.linking.PlayerLink;
+import tronka.justsync.JustSyncApplication;
 
 public class InGameCommand {
 
@@ -38,6 +40,7 @@ public class InGameCommand {
                 .then(this.unlinkSubcommand())
                 .then(this.reloadSubcommand())
                 .then(this.getInfoSubcommand())
+                .then(this.textMsgSubCommand())
         );
     }
 
@@ -187,6 +190,19 @@ public class InGameCommand {
         } else {
             context.getSource().sendSuccess(() -> Component.literal("Player Only!"), false);
         }
+        return 1;
+    }
+
+    private LiteralArgumentBuilder<CommandSourceStack> textMsgSubCommand() {
+        return Commands.literal("textmsg")
+                .then(Commands.argument("message", StringArgumentType.greedyString())
+                .executes(this::textMsg));
+    }
+
+    private int textMsg(CommandContext<CommandSourceStack> context) {
+        String msg = StringArgumentType.getString(context, "message");
+        this.integration.getChatBridge().sendMessageToDiscord(msg, null, null);
+        context.getSource().sendSuccess(() -> Component.literal("Sent message"), false);
         return 1;
     }
 }

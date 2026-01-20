@@ -240,7 +240,7 @@ public class ChatBridge extends ListenerAdapter {
         this.sendMessageToDiscord(message, player, player);
     }
 
-    private void sendMessageToDiscord(String message, ServerPlayer sender, ServerPlayer connectedPlayer) {
+    public void sendMessageToDiscord(String message, ServerPlayer sender, ServerPlayer connectedPlayer) {
         if (connectedPlayer != null && this.integration.getVanishIntegration().isVanished(connectedPlayer)) {
             return;
         }
