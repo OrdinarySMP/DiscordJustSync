@@ -249,11 +249,19 @@ public class Config {
                         "%dimension%: dimension"})
         public String waypointFormat = "Waypoint: (%abbr%)  %name% `%x% %y% %z%` in %dimension%";
 
+        // TODO: write comments
         @TomlMapComment(key = "CHAT", value = "Format settings for different message types sent to Discord")
         @TomlMapComment(key = "SERVER_START", value = "Format for when start")
         public EnumMap<MessageType, MessageFormat> formats = new EnumMap<>(Map.of(
             MessageType.CHAT, new MessageFormat(MessageFormat.SendType.WEBHOOK, "%msg%", null, "%user%"),
-            MessageType.SERVER_START, new MessageFormat(MessageFormat.SendType.DEFAULT, "Server started", null, null)
+            MessageType.COMMAND_SAY, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user%: %msg%", null, null),
+            MessageType.JOIN, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% joined", null, null),
+            MessageType.LEAVE, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% left", null, null),
+            MessageType.TIMEOUT, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% timed out", null, null),
+            MessageType.DEATH, new MessageFormat(MessageFormat.SendType.DEFAULT, null, null, null),
+            MessageType.ADVANCEMENT, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% just made the advancement **%title%**\n*%description%*", null, null),
+            MessageType.SERVER_START, new MessageFormat(MessageFormat.SendType.DEFAULT, "Server started", null, null),
+            MessageType.SERVER_STOP, new MessageFormat(MessageFormat.SendType.DEFAULT, "Server stopped", null, null)
         ));
     }
 
