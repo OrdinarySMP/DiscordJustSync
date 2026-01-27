@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import tronka.justsync.JustSyncApplication;
+import tronka.justsync.events.CoreEvents;
 
 @Mixin(PlayerList.class)
 public class PlayerManagerMixin {
@@ -49,9 +50,7 @@ public class PlayerManagerMixin {
             return;
         }
         JustSyncApplication.getInstance().getLinkManager().onPlayerJoin(player);
-        if (!JustSyncApplication.getInstance().getVanishIntegration().isVanished(player)) {
-            JustSyncApplication.getInstance().getChatBridge().onPlayerJoin(player);
-        }
+        CoreEvents.PLAYER_JOIN.invoke(player);
     }
 
 }
