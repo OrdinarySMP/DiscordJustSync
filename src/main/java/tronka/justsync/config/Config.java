@@ -3,16 +3,19 @@ package tronka.justsync.config;
 import com.moandjiezana.toml.Toml;
 import com.moandjiezana.toml.TomlComment;
 import com.moandjiezana.toml.TomlIgnore;
+import com.moandjiezana.toml.TomlMapComment;
 import com.moandjiezana.toml.TomlWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import tronka.justsync.JustSyncApplication;
+import tronka.justsync.events.payload.MessageType;
 
 public class Config {
 
@@ -21,6 +24,7 @@ public class Config {
     @TomlComment("Discord channel ID to sync with Minecraft chat (required - right-click channel and copy ID)")
     public String serverChatChannel = "";
     @TomlComment("Use Discord webhooks for chat messages with player avatars and usernames")
+    @Deprecated(since = "1.18.0")
     public boolean useWebHooks = true;
 
     @TomlComment({
@@ -207,20 +211,26 @@ public class Config {
         public String commandExecutedInfoText = "%user% executed ``%cmd%``";
         @TomlComment({"The message to display in discord when a player joins",
             "Placeholder: %user%: The player name of whoever joined"})
+        @Deprecated(since = "1.18.0")
         public String playerJoinMessage = "%user% joined";
         @TomlComment({"The message to display in discord when a player leaves",
             "Placeholder: %user%: The player name of whoever left"})
+        @Deprecated(since = "1.18.0")
         public String playerLeaveMessage = "%user% left";
         @TomlComment({"The message to display in discord when a player times out",
             "Placeholder: %user%: The player name of whoever timed out"})
+        @Deprecated(since = "1.18.0")
         public String playerTimeOutMessage = "%user% timed out";
         @TomlComment({"The formatting to use for commands sent to the console channel",
             "Placeholders:",
             "%user%: The user who received the advancement",
             "%title%: Advancement title",
             "%description%: Advancement description"})
+        @Deprecated(since = "1.18.0")
         public String advancementMessage = "%user% just made the advancement **%title%**\n*%description%*";
+        @Deprecated(since = "1.18.0")
         public String startMessage = "Server started";
+        @Deprecated(since = "1.18.0")
         public String stopMessage = "Server stopped";
         @TomlComment({
             "Formatting to use for the online player count status if there is more than 1 player online, related to showPlayerCountStatus",
@@ -238,6 +248,13 @@ public class Config {
                         "%x%, %y%, %z%: coordinates",
                         "%dimension%: dimension"})
         public String waypointFormat = "Waypoint: (%abbr%)  %name% `%x% %y% %z%` in %dimension%";
+
+        @TomlMapComment(key = "CHAT", value = "Format settings for different message types sent to Discord")
+        @TomlMapComment(key = "SERVER_START", value = "Format for when start")
+        public EnumMap<MessageType, MessageFormat> formats = new EnumMap<>(Map.of(
+            MessageType.CHAT, new MessageFormat(MessageFormat.SendType.WEBHOOK, "%msg%", null, "%user%"),
+            MessageType.SERVER_START, new MessageFormat(MessageFormat.SendType.DEFAULT, "Server started", null, null)
+        ));
     }
 
     public static class DiscordLinkResults {
