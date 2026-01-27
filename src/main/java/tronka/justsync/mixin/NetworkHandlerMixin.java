@@ -12,7 +12,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import tronka.justsync.JustSyncApplication;
+import tronka.justsync.events.CoreEvents;
+import tronka.justsync.events.payload.MinecraftChatMessagePayload;
 
 @Mixin(ServerGamePacketListenerImpl.class)
 public class NetworkHandlerMixin {
@@ -22,26 +23,17 @@ public class NetworkHandlerMixin {
 
     @Inject(method = "onDisconnect", at = @At("HEAD"))
     private void onPlayerLeave(DisconnectionDetails info, CallbackInfo ci) {
-        if (!JustSyncApplication.getInstance().isReady()) {
-            return;
-        }
-        if (JustSyncApplication.getInstance().getVanishIntegration().isVanished(this.player)) {
-            return;
-        }
         if (!info.reason().toString().contains("disconnect.timeout")) {
-            JustSyncApplication.getInstance().getChatBridge().onPlayerLeave(this.player);
+            CoreEvents.PLAYER_DISCONNECT.invoke(this.player);
         } else {
-            JustSyncApplication.getInstance().getChatBridge().onPlayerTimeOut(this.player);
+            CoreEvents.PLAYER_TIMEOUT.invoke(this.player);
         }
     }
 
     @Inject(method = "getSignedMessage", at = @At("RETURN"))
     private void onMessageValidated(ServerboundChatPacket packet, LastSeenMessages lastSeenMessages,
         CallbackInfoReturnable<PlayerChatMessage> cir) {
-        if (!JustSyncApplication.getInstance().isReady()) {
-            return;
-        }
-        JustSyncApplication.getInstance().getChatBridge().onMcChatMessage(packet.message(), this.player);
+        CoreEvents.MINECRAFT_CHAT_MESSAGE.invoke(new MinecraftChatMessagePayload(this.player, packet.message()));
     }
 
 }
