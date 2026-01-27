@@ -351,4 +351,18 @@ public final class Utils {
 
         return Optional.ofNullable(textureId);
     }
+
+    public static String getAvatarUrl(ServerPlayer player, Config config) {
+        String avatarUrl =
+                config.avatarUrl
+                        .replace("%UUID%", player.getUUID().toString())
+                        .replace("%randomUUID%", UUID.randomUUID().toString());
+        if (avatarUrl.contains("%textureId%")) {
+            Optional<String> textureId = Utils.getTextureId(player);
+            avatarUrl =
+                    avatarUrl.replace(
+                            "%textureId%", textureId.orElse(config.defaultAvatarTextureId));
+        }
+        return avatarUrl;
+    }
 }
