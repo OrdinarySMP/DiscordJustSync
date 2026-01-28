@@ -25,6 +25,7 @@ public class Config {
     public String serverChatChannel = "";
     @TomlComment("Use Discord webhooks for chat messages with player avatars and usernames")
     @Deprecated(since = "1.18.0")
+    @TomlIgnore
     public boolean useWebHooks = true;
 
     @TomlComment({
@@ -131,6 +132,22 @@ public class Config {
             config.integrations.luckPerms.assignSyncedRolesToAlts = false;
             config.configVersion = 4;
         }
+
+        if (config.configVersion < 5) {
+            config.messages.formats.get(MessageType.CHAT).type =
+                    config.useWebHooks
+                            ? MessageFormat.SendType.WEBHOOK
+                            : MessageFormat.SendType.DEFAULT;
+            config.messages.formats.get(MessageType.JOIN).format = config.messages.playerJoinMessage;
+            config.messages.formats.get(MessageType.LEAVE).format = config.messages.playerLeaveMessage;
+            config.messages.formats.get(MessageType.TIMEOUT).format = config.messages.playerTimeOutMessage;
+            config.messages.formats.get(MessageType.ADVANCEMENT).format = config.messages.advancementMessage;
+            config.messages.formats.get(MessageType.SERVER_START).format = config.messages.startMessage;
+            config.messages.formats.get(MessageType.SERVER_STOP).format = config.messages.stopMessage;
+
+            config.configVersion = 5;
+        }
+
     }
 
     public static class LinkingOptions {
@@ -212,14 +229,17 @@ public class Config {
         @TomlComment({"The message to display in discord when a player joins",
             "Placeholder: %user%: The player name of whoever joined"})
         @Deprecated(since = "1.18.0")
+        @TomlIgnore
         public String playerJoinMessage = "%user% joined";
         @TomlComment({"The message to display in discord when a player leaves",
             "Placeholder: %user%: The player name of whoever left"})
         @Deprecated(since = "1.18.0")
+        @TomlIgnore
         public String playerLeaveMessage = "%user% left";
         @TomlComment({"The message to display in discord when a player times out",
             "Placeholder: %user%: The player name of whoever timed out"})
         @Deprecated(since = "1.18.0")
+        @TomlIgnore
         public String playerTimeOutMessage = "%user% timed out";
         @TomlComment({"The formatting to use for commands sent to the console channel",
             "Placeholders:",
@@ -227,10 +247,13 @@ public class Config {
             "%title%: Advancement title",
             "%description%: Advancement description"})
         @Deprecated(since = "1.18.0")
+        @TomlIgnore
         public String advancementMessage = "%user% just made the advancement **%title%**\n*%description%*";
         @Deprecated(since = "1.18.0")
+        @TomlIgnore
         public String startMessage = "Server started";
         @Deprecated(since = "1.18.0")
+        @TomlIgnore
         public String stopMessage = "Server stopped";
         @TomlComment({
             "Formatting to use for the online player count status if there is more than 1 player online, related to showPlayerCountStatus",
