@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 import tronka.justsync.JustSyncApplication;
 import tronka.justsync.Utils;
 import tronka.justsync.config.Config;
+import tronka.justsync.config.MessageFormat;
 import tronka.justsync.events.ChatEvents;
 import tronka.justsync.events.CoreEvents;
 import tronka.justsync.events.payload.AdvancementPayload;
@@ -37,7 +38,7 @@ public class MinecraftToDiscordPreprocessor {
         CoreEvents.PLAYER_TIMEOUT.subscribe(this::onPlayerTimeout);
         CoreEvents.COMMAND_EXECUTED.subscribe(this::onCommandExecute);
 
-        this.sendChatMessageToDiscord(this.config.messages.startMessage, null, MessageType.SERVER_START);
+        this.sendChatMessageToDiscord(this.getFormatString(MessageType.SERVER_START), null, MessageType.SERVER_START);
     }
 
     private void onConfigLoaded(Config config) {
@@ -45,7 +46,7 @@ public class MinecraftToDiscordPreprocessor {
     }
 
     private void onServerStopping(MinecraftServer server) {
-        this.sendChatMessageToDiscord(this.config.messages.stopMessage, null, MessageType.SERVER_STOP);
+        this.sendChatMessageToDiscord(this.getFormatString(MessageType.SERVER_STOP), null, MessageType.SERVER_STOP);
     }
 
     private void onChatMessage(MinecraftChatMessagePayload payload) {
@@ -66,13 +67,13 @@ public class MinecraftToDiscordPreprocessor {
             return;
         }
 
-        String message = this.config.messages.advancementMessage
+        String message = this.getFormatString(MessageType.ADVANCEMENT)
                 .replace("%title%", advancement.getTitle().getString())
                 .replace("%description%", advancement.getDescription().getString());
         this.sendChatMessageToDiscord(message, payload.player(), MessageType.ADVANCEMENT);
     }
 
-    private void onPlayerDeath(DeathPayload payload)  {
+    private void onPlayerDeath(DeathPayload payload) {
         if (!this.config.broadCastDeathMessages) {
             return;
         }
@@ -84,15 +85,15 @@ public class MinecraftToDiscordPreprocessor {
     }
 
     public void onPlayerJoin(ServerPlayer player) {
-        this.sendChatMessageToDiscord(this.config.messages.playerJoinMessage, player, MessageType.JOIN);
+        this.sendChatMessageToDiscord(this.getFormatString(MessageType.JOIN), player, MessageType.JOIN);
     }
 
     public void onPlayerDisconnect(ServerPlayer player) {
-        this.sendChatMessageToDiscord(this.config.messages.playerLeaveMessage, player, MessageType.LEAVE);
+        this.sendChatMessageToDiscord(this.getFormatString(MessageType.LEAVE), player, MessageType.LEAVE);
     }
 
     private void onPlayerTimeout(ServerPlayer player) {
-        this.sendChatMessageToDiscord(this.config.messages.playerTimeOutMessage, player, MessageType.TIMEOUT);
+        this.sendChatMessageToDiscord(this.getFormatString(MessageType.TIMEOUT), player, MessageType.TIMEOUT);
     }
 
     public void onCommandExecute(CommandPayload payload) {
@@ -118,6 +119,14 @@ public class MinecraftToDiscordPreprocessor {
             message = prefix + data;
         }
         this.sendChatMessageToDiscord(message, sender, MessageType.COMMAND_SAY);
+    }
+
+    private String getFormatString(MessageType type) {
+        MessageFormat messageFormat = this.config.messages.formats.get(type);
+        if (messageFormat != null && !messageFormat.format.isEmpty()) {
+            return messageFormat.format;
+        }
+        return "?MISSING?";
     }
 
     private void sendChatMessageToDiscord(String message, ServerPlayer player, MessageType type) {
