@@ -71,7 +71,7 @@ public class Config {
 
 
     @TomlComment("Version of the Config file, do not touch!")
-    public int configVersion = 4;
+    public int configVersion = 5;
 
     public MessageStrings messages = new MessageStrings();
     public LinkingOptions linking = new LinkingOptions();
@@ -133,6 +133,7 @@ public class Config {
             config.configVersion = 4;
         }
 
+        // 4 -> 5
         if (config.configVersion < 5) {
             config.messages.formats.get(MessageType.CHAT).type =
                     config.useWebHooks
