@@ -16,7 +16,7 @@ import tronka.justsync.events.payload.CommandPayload;
 import tronka.justsync.events.payload.DeathPayload;
 import tronka.justsync.events.payload.MessageType;
 import tronka.justsync.events.payload.MinecraftChatMessagePayload;
-import tronka.justsync.events.payload.MinecraftToDiscordChatMessagePayload;
+import tronka.justsync.events.payload.MinecraftToDiscordMessagePayload;
 
 
 public class MinecraftToDiscordPreprocessor {
@@ -134,6 +134,6 @@ public class MinecraftToDiscordPreprocessor {
         if (type == MessageType.CHAT || type == MessageType.COMMAND_SAY) {
             message = Utils.formatMentions(message, this.integration, player);
         }
-        ChatEvents.MINECRAFT_TO_DISCORD_CHAT_MESSAGE.invoke(new MinecraftToDiscordChatMessagePayload(message, player, type));
+        ChatEvents.MINECRAFT_TO_DISCORD_CHAT_MESSAGE.invoke(new MinecraftToDiscordMessagePayload(message, player, type));
     }
 }

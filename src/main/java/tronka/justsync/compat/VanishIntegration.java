@@ -8,7 +8,7 @@ import tronka.justsync.JustSyncApplication;
 import tronka.justsync.config.Config;
 import tronka.justsync.events.ChatEvents;
 import tronka.justsync.events.CoreEvents;
-import tronka.justsync.events.payload.MinecraftToDiscordChatMessagePayload;
+import tronka.justsync.events.payload.MinecraftToDiscordMessagePayload;
 
 public class VanishIntegration {
 
@@ -37,7 +37,7 @@ public class VanishIntegration {
         this.priorityMessageSending = false;
     }
 
-    private boolean filterVanishChat(MinecraftToDiscordChatMessagePayload payload) {
+    private boolean filterVanishChat(MinecraftToDiscordMessagePayload payload) {
         return !this.isVanished(payload.player()) || this.priorityMessageSending;
     }
 
