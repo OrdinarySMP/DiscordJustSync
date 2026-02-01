@@ -22,10 +22,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
+import tronka.justsync.CompatUtil;
 import tronka.justsync.JustSyncApplication;
 import tronka.justsync.Utils;
 import tronka.justsync.compat.FloodgateIntegration;
 import tronka.justsync.config.Config;
+import tronka.justsync.events.CoreEvents;
+import tronka.justsync.events.payload.JoiningPayload;
 
 public class LinkManager {
 
@@ -44,6 +47,8 @@ public class LinkManager {
     public LinkManager(JustSyncApplication integration) {
         this.integration = integration;
         integration.registerConfigReloadHandler(this::onConfigLoaded);
+        CoreEvents.PLAYER_JOINING.subscribe(this::onPlayerJoining);
+        CoreEvents.PLAYER_JOIN.subscribe(this::onPlayerJoin);
     }
 
     private void onConfigLoaded(Config config) {
@@ -72,7 +77,7 @@ public class LinkManager {
         return Optional.empty();
     }
 
-    public boolean isAllowedToJoin(Member member) {
+    public boolean hasRequiredRoles(Member member) {
         List<Role> roles = new ArrayList<>(member.getRoles());
         if (this.integration.getConfig().linking.requiredRolesCount == -1) {
             return roles.containsAll(this.requiredRoles);
@@ -81,8 +86,8 @@ public class LinkManager {
         return roles.size() >= this.integration.getConfig().linking.requiredRolesCount;
     }
 
-    public boolean isAllowedToJoin(long discordId) {
-        return this.isAllowedToJoin(this.integration.getGuild().getMemberById(discordId));
+    public boolean hasRequiredRoles(long discordId) {
+        return this.hasRequiredRoles(this.integration.getGuild().getMemberById(discordId));
     }
 
     public Optional<Member> getDiscordOf(PlayerLink link) {
@@ -101,24 +106,7 @@ public class LinkManager {
         return this.linkData.getPlayerLink(playerId);
     }
 
-    public boolean canJoin(UUID playerId) {
-        // always joinable if no linking
-        if (!this.integration.getConfig().linking.enableLinking) {
-            return true;
-        }
-
-        Optional<Member> member = this.getDiscordOf(playerId);
-        if (member.isEmpty()) {
-            return false;
-        }
-        // check requirements
-        if (!this.isAllowedToJoin(member.get())) {
-            return false;
-        }
-        return !this.integration.getConfig().linking.disallowTimeoutMembersToJoin || !member.get().isTimedOut();
-    }
-
-    public void onPlayerJoin(ServerPlayer player) {
+    private void onPlayerJoin(ServerPlayer player) {
         Optional<PlayerLink> dataOptional = this.linkData.getPlayerLink(player.getUUID());
         if (dataOptional.isEmpty()) {
             return;
@@ -143,28 +131,31 @@ public class LinkManager {
         }
     }
 
-    public String getJoinError(/*$ profile_class {*/net.minecraft.server.players.NameAndId/*$}*/ profile) {
-        //? if >= 1.21.9 {
-        Optional<Member> member = this.getDiscordOf(profile.id());
-        //?} else {
-        /*Optional<Member> member = this.getDiscordOf(profile.getId());
-        *///?}
-        if (member.isEmpty()) {
-            String code = this.generateLinkCode(profile);
-            return this.integration.getConfig().kickMessages.kickLinkCode.formatted(code);
+    private void onPlayerJoining(JoiningPayload payload) {
+        // always joinable if no linking
+        if (!this.integration.getConfig().linking.enableLinking) {
+            return;
         }
-        return this.getJoinError(member.get());
-    }
 
-    public String getJoinError(Member member) {
-        if (member.isTimedOut()) {
-            return this.integration.getConfig().kickMessages.kickTimedOut;
+        Optional<Member> member = this.getDiscordOf(payload.getProfile().uuid());
+        if (member.isEmpty()) {
+            String code = this.generateLinkCode(payload.getProfile());
+            payload.setCanceled(this.integration.getConfig().kickMessages.kickLinkCode.formatted(code));
+            return;
         }
-        return this.integration.getConfig().kickMessages.kickMissingRoles;
+        if (!this.hasRequiredRoles(member.get())) {
+            payload.setCanceled(this.integration.getConfig().kickMessages.kickMissingRoles);
+            return;
+        }
+
+        if (this.integration.getConfig().linking.disallowTimeoutMembersToJoin && member.get().isTimedOut()) {
+            payload.setCanceled(this.integration.getConfig().kickMessages.kickTimedOut);
+            return;
+        }
     }
 
     public String confirmLink(long discordId, String code) {
-        if (!this.isAllowedToJoin(discordId)) {
+        if (!this.hasRequiredRoles(discordId)) {
             return this.integration.getConfig().linkResults.linkNotAllowed;
         }
         Optional<LinkRequest> linkRequest = this.getPlayerLinkFromCode(code);
@@ -205,7 +196,7 @@ public class LinkManager {
         }
         Optional<Member> member = this.getDiscordOf(playerLink);
         if (member.isEmpty()) {
-            // should never occure
+            // should never occur
             return false;
         }
         List<Role> roles = new ArrayList<>(member.get().getRoles());
@@ -244,7 +235,7 @@ public class LinkManager {
         return Optional.of(request);
     }
 
-    public String generateLinkCode(/*$ profile_class {*/net.minecraft.server.players.NameAndId/*$}*/ profile) {
+    public String generateLinkCode(CompatUtil.Profile profile) {
         if (this.linkRequests.size() >= PURGE_LIMIT) {
             this.purgeCodes();
         }
@@ -255,11 +246,7 @@ public class LinkManager {
         do {
             code = String.valueOf(RANDOM.nextInt(100000, 1000000)); // 6-digit code
         } while (this.linkRequests.containsKey(code));
-        //? if >= 1.21.9 {
-        this.linkRequests.put(code, new LinkRequest(profile.id(), profile.name(), expiryTime));
-        //?} else {
-        /*this.linkRequests.put(code, new LinkRequest(profile.getId(), profile.getName(), expiryTime));
-        *///?}
+        this.linkRequests.put(code, new LinkRequest(profile.uuid(), profile.name(), expiryTime));
         return code;
     }
 

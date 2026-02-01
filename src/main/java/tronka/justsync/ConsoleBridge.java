@@ -16,6 +16,8 @@ import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.minecraft.commands.CommandSourceStack;
 import tronka.justsync.chat.DiscordChatMessageSender;
 import tronka.justsync.config.Config;
+import tronka.justsync.events.CoreEvents;
+import tronka.justsync.events.payload.CommandPayload;
 
 public class ConsoleBridge extends ListenerAdapter {
 
@@ -29,6 +31,7 @@ public class ConsoleBridge extends ListenerAdapter {
     public ConsoleBridge(JustSyncApplication integration) {
         this.integration = integration;
         integration.registerConfigReloadHandler(this::onConfigLoaded);
+        CoreEvents.COMMAND_EXECUTED.subscribe(this::onCommandExecute);
     }
 
     private void onConfigLoaded(Config config) {
@@ -70,7 +73,9 @@ public class ConsoleBridge extends ListenerAdapter {
         }
     }
 
-    public void onCommandExecute(CommandSourceStack source, String command) {
+    public void onCommandExecute(CommandPayload payload) {
+        CommandSourceStack source = payload.source();
+        String command = payload.command();
         if (this.commandLogChannel == null) {
             return;
         }

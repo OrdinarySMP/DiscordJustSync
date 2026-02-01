@@ -8,6 +8,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.level.ServerPlayer;
 import org.geysermc.floodgate.api.FloodgateApi;
 import tronka.justsync.JustSyncApplication;
+import tronka.justsync.events.CoreEvents;
+import tronka.justsync.events.payload.JoiningPayload;
 import tronka.justsync.linking.LinkManager;
 import tronka.justsync.linking.PlayerLink;
 
@@ -26,6 +28,18 @@ public class FloodgateIntegration {
             this.floodgateApi = FloodgateApi.getInstance();
         }
         this.integration = integration;
+        CoreEvents.PLAYER_JOINING.subscribe(this::onPlayerJoining);
+    }
+
+    private void onPlayerJoining(JoiningPayload payload) {
+        if (this.floodgateApi == null) {
+            return;
+        }
+
+        UUID uuid = payload.getProfile().uuid();
+        if (!this.canJoinMixedAccountType(uuid)) {
+            payload.setCanceled(this.integration.getConfig().integrations.floodgate.joiningMixedAccountTypesKickMessage);
+        }
     }
 
     public boolean isBedrock(UUID uuid) {
@@ -58,7 +72,7 @@ public class FloodgateIntegration {
         return null;
     }
 
-    public boolean canJoinMixedAccountType(UUID id) {
+    private boolean canJoinMixedAccountType(UUID id) {
         if (this.integration.getConfig().integrations.floodgate.allowJoiningMixedAccountTypes
             || this.floodgateApi == null) {
             return true;

@@ -5,10 +5,10 @@ import net.minecraft.advancements.DisplayInfo;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import org.jetbrains.annotations.NotNull;
 import tronka.justsync.JustSyncApplication;
 import tronka.justsync.Utils;
 import tronka.justsync.config.Config;
-import tronka.justsync.config.MessageFormat;
 import tronka.justsync.events.ChatEvents;
 import tronka.justsync.events.CoreEvents;
 import tronka.justsync.events.payload.AdvancementPayload;
@@ -17,6 +17,9 @@ import tronka.justsync.events.payload.DeathPayload;
 import tronka.justsync.events.payload.MessageType;
 import tronka.justsync.events.payload.MinecraftChatMessagePayload;
 import tronka.justsync.events.payload.MinecraftToDiscordMessagePayload;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class MinecraftToDiscordPreprocessor {
@@ -38,7 +41,7 @@ public class MinecraftToDiscordPreprocessor {
         CoreEvents.PLAYER_TIMEOUT.subscribe(this::onPlayerTimeout);
         CoreEvents.COMMAND_EXECUTED.subscribe(this::onCommandExecute);
 
-        this.sendChatMessageToDiscord(this.getFormatString(MessageType.SERVER_START), null, MessageType.SERVER_START);
+        this.invokeMessageEvent(Map.of(), null, MessageType.SERVER_START);
     }
 
     private void onConfigLoaded(Config config) {
@@ -46,16 +49,12 @@ public class MinecraftToDiscordPreprocessor {
     }
 
     private void onServerStopping(MinecraftServer server) {
-        this.sendChatMessageToDiscord(this.getFormatString(MessageType.SERVER_STOP), null, MessageType.SERVER_STOP);
+        this.invokeMessageEvent(Map.of(), null, MessageType.SERVER_STOP);
     }
 
     private void onChatMessage(MinecraftChatMessagePayload payload) {
-        String message = payload.message();
-        if (this.config.waypoints.formatWaypoints) {
-            message = Utils.formatXaero(message, this.config);
-            message = Utils.formatVoxel(message, this.config, payload.player());
-        }
-        this.sendChatMessageToDiscord(message, payload.player(), MessageType.CHAT);
+        Map<String, String> replacements = Map.of("%msg%", this.preProcessMessage(payload.message(), payload.player()));
+        this.invokeMessageEvent(replacements, payload.player(), MessageType.CHAT);
     }
 
     private void onAdvancement(AdvancementPayload payload) {
@@ -67,10 +66,11 @@ public class MinecraftToDiscordPreprocessor {
             return;
         }
 
-        String message = this.getFormatString(MessageType.ADVANCEMENT)
-                .replace("%title%", advancement.getTitle().getString())
-                .replace("%description%", advancement.getDescription().getString());
-        this.sendChatMessageToDiscord(message, payload.player(), MessageType.ADVANCEMENT);
+        Map<String, String> replacements = Map.of(
+                "%title%", advancement.getTitle().getString(),
+                "%description%", advancement.getDescription().getString()
+        );
+        this.invokeMessageEvent(replacements, payload.player(), MessageType.ADVANCEMENT);
     }
 
     private void onPlayerDeath(DeathPayload payload) {
@@ -81,19 +81,19 @@ public class MinecraftToDiscordPreprocessor {
         if (message.equals("death.attack.badRespawnPoint")) {
             message = "%s was killed by [Intentional Mod Design]".formatted(payload.player().getName().getString());
         }
-        this.sendChatMessageToDiscord(Utils.escapeUnderscores(message), payload.player(), MessageType.DEATH);
+        this.invokeMessageEvent(Map.of("%msg%", message), payload.player(), MessageType.DEATH);
     }
 
     public void onPlayerJoin(ServerPlayer player) {
-        this.sendChatMessageToDiscord(this.getFormatString(MessageType.JOIN), player, MessageType.JOIN);
+        this.invokeMessageEvent(Map.of(), player, MessageType.JOIN);
     }
 
     public void onPlayerDisconnect(ServerPlayer player) {
-        this.sendChatMessageToDiscord(this.getFormatString(MessageType.LEAVE), player, MessageType.LEAVE);
+        this.invokeMessageEvent(Map.of(), player, MessageType.LEAVE);
     }
 
     private void onPlayerTimeout(ServerPlayer player) {
-        this.sendChatMessageToDiscord(this.getFormatString(MessageType.TIMEOUT), player, MessageType.TIMEOUT);
+        this.invokeMessageEvent(Map.of(), player, MessageType.TIMEOUT);
     }
 
     public void onCommandExecute(CommandPayload payload) {
@@ -103,37 +103,40 @@ public class MinecraftToDiscordPreprocessor {
             return;
         }
         ServerPlayer sender;
-        String prefix;
         if (source.getEntity() instanceof ServerPlayer player) {
             sender = player;
-            prefix = "";
         } else {
             sender = null;
-            prefix = Utils.escapeUnderscores(source.getTextName()) + ": ";
         }
         String data = command.split(" ", 2)[1];
         String message;
         if (command.startsWith("me")) {
-            message = prefix + "*" + data + "*";
+            message = "*" + data + "*";
         } else {
-            message = prefix + data;
+            message = data;
         }
-        this.sendChatMessageToDiscord(message, sender, MessageType.COMMAND_SAY);
+        Map<String, String> replacements = Map.of(
+                "%user%", Utils.escapeUnderscores(source.getTextName()),
+                "%msg%", this.preProcessMessage(message, sender)
+        );
+        this.invokeMessageEvent(replacements, sender, MessageType.COMMAND_SAY);
     }
 
-    private String getFormatString(MessageType type) {
-        MessageFormat messageFormat = this.config.messages.formats.get(type);
-        if (messageFormat != null && !messageFormat.format.isEmpty()) {
-            return messageFormat.format;
+    private String preProcessMessage(String message, ServerPlayer player) {
+        if (this.config.waypoints.formatWaypoints && player != null) {
+            message = Utils.formatXaero(message, this.config);
+            message = Utils.formatVoxel(message, this.config, player);
         }
-        return "?MISSING?";
-    }
 
-    private void sendChatMessageToDiscord(String message, ServerPlayer player, MessageType type) {
         message = Utils.escapeMentions(message);
-        if (type == MessageType.CHAT || type == MessageType.COMMAND_SAY) {
-            message = Utils.formatMentions(message, this.integration, player);
-        }
-        ChatEvents.MINECRAFT_TO_DISCORD_CHAT_MESSAGE.invoke(new MinecraftToDiscordMessagePayload(message, player, type));
+        message = Utils.formatMentions(message, this.integration, player);
+        return message;
+    }
+
+    private void invokeMessageEvent(Map<String, String> replacements, ServerPlayer player, MessageType type) {
+        Map<String, String> map = new HashMap<>();
+        map.put("%user%", player != null ? Utils.escapeUnderscores(player.getName().getString()) : "Server");
+        map.putAll(replacements);
+        ChatEvents.MINECRAFT_TO_DISCORD_CHAT_MESSAGE.invoke(new MinecraftToDiscordMessagePayload(map, player, type));
     }
 }
