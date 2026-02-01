@@ -3,13 +3,13 @@ package tronka.justsync.chat.discordsender;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 
 import tronka.justsync.config.Config;
-import tronka.justsync.events.payload.MinecraftToDiscordChatMessagePayload;
+import tronka.justsync.events.payload.MinecraftToDiscordMessagePayload;
 
 import java.util.concurrent.CompletableFuture;
 
 public class DiscordSenderState {
     private Config config;
-    private MinecraftToDiscordChatMessagePayload payload;
+    private MinecraftToDiscordMessagePayload payload;
     private TextChannel channel;
     private long messageId;
     private long lastMessageEdit;
@@ -18,7 +18,7 @@ public class DiscordSenderState {
     private CompletableFuture<Void> future;
     private boolean isEditPending;
 
-    public DiscordSenderState(MinecraftToDiscordChatMessagePayload payload, TextChannel channel) {
+    public DiscordSenderState(MinecraftToDiscordMessagePayload payload, TextChannel channel) {
         this.payload = payload;
         this.channel = channel;
     }
@@ -75,7 +75,7 @@ public class DiscordSenderState {
         this.future = future;
     }
 
-    public MinecraftToDiscordChatMessagePayload getPayload() {
+    public MinecraftToDiscordMessagePayload getPayload() {
         return payload;
     }
 
