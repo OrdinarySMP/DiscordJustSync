@@ -18,10 +18,5 @@ public class CommandManagerMixin {
     @Inject(method = "performCommand", at = @At("HEAD"))
     private void onExecuteCommand(ParseResults<CommandSourceStack> parseResults, String command, CallbackInfo ci) {
         CoreEvents.COMMAND_EXECUTED.invoke(new CommandPayload(parseResults.getContext().getSource(), command));
-        if (!JustSyncApplication.getInstance().isReady()) {
-            return;
-        }
-        JustSyncApplication.getInstance().getConsoleBridge()
-            .onCommandExecute(parseResults.getContext().getSource(), command);
     }
 }

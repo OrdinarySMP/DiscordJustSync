@@ -1,6 +1,8 @@
 package tronka.justsync;
 
 
+import java.util.UUID;
+
 public class CompatUtil {
 
     private CompatUtil() {}
@@ -28,4 +30,14 @@ public class CompatUtil {
         return level.level;
     }
     *///?}
+
+    public record Profile(String name, UUID uuid) {
+        public static Profile wrap(/*$ profile_class {*/net.minecraft.server.players.NameAndId/*$}*/ profile) {
+            //? if >= 1.21.9 {
+            return new Profile(profile.name(), profile.id());
+            //?} else {
+            /*return new Profile(profile.getName(), profile.getId());
+             *///?}
+        }
+    }
 }

@@ -26,7 +26,7 @@ public class DiscordEvents extends ListenerAdapter {
     public void onGuildMemberUpdate(GuildMemberUpdateEvent event) {
         this.integration.getLuckPermsIntegration().evaluateRolesFor(event.getMember());
 
-        if (!this.integration.getLinkManager().isAllowedToJoin(event.getMember())) {
+        if (!this.integration.getLinkManager().hasRequiredRoles(event.getMember())) {
             this.integration.getLinkManager().kickAccounts(event.getMember(),
                 this.integration.getLinkManager().getJoinError(event.getMember()));
         }

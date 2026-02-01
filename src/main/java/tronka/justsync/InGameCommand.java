@@ -63,20 +63,19 @@ public class InGameCommand {
     }
 
     private int getLinkInfo(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        Collection</*$ profile_class {*/net.minecraft.server.players.NameAndId/*$}*/> profiles = GameProfileArgument.getGameProfiles(context, "player");
+        Collection<CompatUtil.Profile> profiles = GameProfileArgument.getGameProfiles(context, "player")
+                .stream().map(CompatUtil.Profile::wrap).toList();
         Collection<String> lines = new ArrayList<>();
-        for (/*$ profile_class {*/net.minecraft.server.players.NameAndId/*$}*/ profile : profiles) {
-            UUID uuid = profile./*? if >= 1.21.9 {*/ id() /*?} else {*/ /*getId() *//*?}*/;
-            String profileName = profile./*? if >= 1.21.9 {*/ name() /*?} else {*/ /*getName() *//*?}*/;
-            Optional<PlayerLink> optionalLink = this.integration.getLinkManager().getDataOf(uuid);
+        for (CompatUtil.Profile profile : profiles) {
+            Optional<PlayerLink> optionalLink = this.integration.getLinkManager().getDataOf(profile.uuid());
             if (optionalLink.isEmpty()) {
-                lines.add("No records for " + profileName);
+                lines.add("No records for " + profile.name());
             } else {
                 Optional<Member> member = this.integration.getLinkManager().getDiscordOf(optionalLink.get());
                 if (member.isPresent()) {
                     lines.add(formatPlayerInfo(optionalLink.get(), member.get()));
                 } else {
-                    lines.add("Unable to load discord member for " + profileName);
+                    lines.add("Unable to load discord member for " + profile.name());
 
                 }
             }
@@ -164,11 +163,11 @@ public class InGameCommand {
     }
 
     private int unlinkSpecifiedPlayer(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        Collection</*$ profile_class {*/net.minecraft.server.players.NameAndId/*$}*/> profiles = GameProfileArgument.getGameProfiles(context, "player");
+        Collection<CompatUtil.Profile> profiles = GameProfileArgument.getGameProfiles(context, "player")
+                .stream().map(CompatUtil.Profile::wrap).toList();
         int count = 0;
-        for (/*$ profile_class {*/net.minecraft.server.players.NameAndId/*$}*/ profile : profiles) {
-            UUID uuid = /*? if >= 1.21.9 {*/ profile.id() /*?} else {*/ /*profile.getId() *//*?}*/;
-            if (this.integration.getLinkManager().unlinkPlayer(uuid)) {
+        for (CompatUtil.Profile profile : profiles) {
+            if (this.integration.getLinkManager().unlinkPlayer(profile.uuid())) {
                 count++;
             }
         }
