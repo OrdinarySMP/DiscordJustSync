@@ -28,7 +28,7 @@ public class DiscordEvents extends ListenerAdapter {
 
         if (!this.integration.getLinkManager().hasRequiredRoles(event.getMember())) {
             this.integration.getLinkManager().kickAccounts(event.getMember(),
-                this.integration.getLinkManager().getJoinError(event.getMember()));
+                this.integration.getConfig().kickMessages.kickMissingRoles);
         }
     }
 
