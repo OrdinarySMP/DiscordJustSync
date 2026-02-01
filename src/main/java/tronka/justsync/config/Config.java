@@ -135,7 +135,7 @@ public class Config {
 
         // 4 -> 5
         if (config.configVersion < 5) {
-            config.messages.formats.get(MessageType.CHAT).type =
+            config.messages.formats.get(MessageType.CHAT).mode =
                     config.useWebHooks
                             ? MessageFormat.SendType.WEBHOOK
                             : MessageFormat.SendType.DEFAULT;
@@ -273,19 +273,47 @@ public class Config {
                         "%dimension%: dimension"})
         public String waypointFormat = "Waypoint: (%abbr%)  %name% `%x% %y% %z%` in %dimension%";
 
-        // TODO: write comments
-        @TomlMapComment(key = "CHAT", value = "Format settings for different message types sent to Discord")
-        @TomlMapComment(key = "SERVER_START", value = "Format for when start")
+        @TomlComment({"Message formats for different message types sent to Discord",
+                "Every message type supports the following sending modes:",
+                "- DEFAULT: sends a normal message to the channel",
+                "- WEBHOOK: sends the message using a webhook with custom username and avatar",
+                "- EMBED: sends the message as an embed, with custom title, avatar and color",
+                "- DISABLED: does not send the message to Discord"})
+        @TomlMapComment(key = "CHAT", value = {"Format for Minecraft chat messages going to Discord",
+                "Placeholders:",
+                "- %msg%: message",
+                "- %user%: the name of the player who sent the message"})
+        @TomlMapComment(key = "SERVER_START", value = "Format for the server start message")
+        @TomlMapComment(key = "SERVER_STOP", value = "Format for the server stop message")
+        @TomlMapComment(key = "JOIN", value = {"Format for player join messages",
+                "Placeholder: %user%: the name of the player who joined"})
+        @TomlMapComment(key = "LEAVE", value = {"Format for player leave messages",
+                "Placeholder: %user%: the name of the player who left"})
+        @TomlMapComment(key = "TIMEOUT", value = {"Format for player timeout messages",
+                "Placeholders: %user%: the name of the player who timed out"})
+        @TomlMapComment(key = "DEATH", value = {"Format for player death messages",
+                "Placeholders:",
+                "- %msg%: death message",
+                "- %user%: the name of the player who died"})
+        @TomlMapComment(key = "ADVANCEMENT", value = {"Format for player advancement messages",
+                "Placeholders:",
+                "- %title%: advancement title",
+                "- %description%: advancement description",
+                "- %user%: the name of the player who got the advancement",})
+        @TomlMapComment(key = "COMMAND_SAY", value = {"Format for player or console executed /say and /me commands",
+                "Placeholders:",
+                "- %msg%: the message submitted with the command",
+                "- %user%: player name or 'Server' for console"})
         public EnumMap<MessageType, MessageFormat> formats = new EnumMap<>(Map.of(
-            MessageType.CHAT, new MessageFormat(MessageFormat.SendType.WEBHOOK, "%msg%", null, "%user%"),
-            MessageType.COMMAND_SAY, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user%: %msg%", null, null),
-            MessageType.JOIN, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% joined", null, null),
-            MessageType.LEAVE, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% left", null, null),
-            MessageType.TIMEOUT, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% timed out", null, null),
-            MessageType.DEATH, new MessageFormat(MessageFormat.SendType.DEFAULT, null, null, null),
-            MessageType.ADVANCEMENT, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% just made the advancement **%title%**\n*%description%*", null, null),
-            MessageType.SERVER_START, new MessageFormat(MessageFormat.SendType.DEFAULT, "Server started", null, null),
-            MessageType.SERVER_STOP, new MessageFormat(MessageFormat.SendType.DEFAULT, "Server stopped", null, null)
+                MessageType.CHAT, new MessageFormat(MessageFormat.SendType.WEBHOOK, "%msg%", null, "%user%"),
+                MessageType.COMMAND_SAY, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user%: %msg%", null, null),
+                MessageType.JOIN, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% joined", null, null),
+                MessageType.LEAVE, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% left", null, null),
+                MessageType.TIMEOUT, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% timed out", null, null),
+                MessageType.DEATH, new MessageFormat(MessageFormat.SendType.DEFAULT, "%msg%", null, null),
+                MessageType.ADVANCEMENT, new MessageFormat(MessageFormat.SendType.EMBED, "*%description%*", null, "%user% made the advancement %title%"),
+                MessageType.SERVER_START, new MessageFormat(MessageFormat.SendType.DEFAULT, "Server started", null, null),
+                MessageType.SERVER_STOP, new MessageFormat(MessageFormat.SendType.DEFAULT, "Server stopped", null, null)
         ));
     }
 

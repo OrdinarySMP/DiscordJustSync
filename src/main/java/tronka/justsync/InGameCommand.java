@@ -3,7 +3,6 @@ package tronka.justsync;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
-import java.util.UUID;
 
 import com.mojang.brigadier.CommandDispatcher;
 

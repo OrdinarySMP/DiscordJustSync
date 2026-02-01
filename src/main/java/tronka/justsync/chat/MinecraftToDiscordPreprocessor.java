@@ -5,7 +5,6 @@ import net.minecraft.advancements.DisplayInfo;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import org.jetbrains.annotations.NotNull;
 import tronka.justsync.JustSyncApplication;
 import tronka.justsync.Utils;
 import tronka.justsync.config.Config;
