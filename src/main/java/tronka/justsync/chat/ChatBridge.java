@@ -2,11 +2,14 @@ package tronka.justsync.chat;
 
 import club.minnced.discord.webhook.external.JDAWebhookClient;
 import eu.pb4.placeholders.api.node.TextNode;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
-import net.dv8tion.jda.api.entities.Activity;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Map.Entry;
+
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Webhook;
@@ -14,39 +17,41 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.minecraft.advancements.DisplayInfo;
-import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.damagesource.DamageSource;
 import org.jetbrains.annotations.NotNull;
 import tronka.justsync.JustSyncApplication;
 import tronka.justsync.Utils;
+import tronka.justsync.chat.discordsender.DefaultSender;
+import tronka.justsync.chat.discordsender.DiscordMessageDispatcher;
+import tronka.justsync.chat.discordsender.DiscordSenderState;
+import tronka.justsync.chat.discordsender.EmbedSender;
+import tronka.justsync.chat.discordsender.SenderStrategy;
+import tronka.justsync.chat.discordsender.WebhookSender;
 import tronka.justsync.config.Config;
+import tronka.justsync.config.MessageFormat;
+import tronka.justsync.events.ChatEvents;
+import tronka.justsync.events.payload.MinecraftToDiscordMessagePayload;
 
 public class ChatBridge extends ListenerAdapter {
 
     private static final String WEBHOOK_ID = "justsync-hook";
     private final JustSyncApplication integration;
     private TextChannel channel;
-    private boolean stopped = false;
-    private DiscordChatMessageSender messageSender;
+    private DiscordMessageDispatcher messageDispatcher;
     private JDAWebhookClient webhookClient;
 
     public ChatBridge(JustSyncApplication integration) {
         this.integration = integration;
-        ServerLifecycleEvents.SERVER_STOPPING.register(this::onServerStopping);
+        ChatEvents.MINECRAFT_TO_DISCORD_CHAT_MESSAGE.subscribe(this::onMcMessage);
         integration.registerConfigReloadHandler(this::onConfigLoaded);
-        this.sendMessageToDiscord(integration.getConfig().messages.startMessage, null, null);
     }
 
     private void onConfigLoaded(Config config) {
         this.channel = Utils.getTextChannel(this.integration.getJda(), config.serverChatChannel, "serverChatChannel");
-        this.messageSender = null;
+        this.messageDispatcher = null;
         this.setWebhook(null);
-        if (this.integration.getConfig().useWebHooks) {
+        if (this.integration.getConfig().messages.formats.values().stream()
+                .anyMatch(format -> format.mode.equals(MessageFormat.SendType.WEBHOOK))) {
             this.channel.retrieveWebhooks().onSuccess((webhooks -> {
                 Optional<Webhook> hook = webhooks.stream()
                     .filter(w -> w.getOwner() == this.integration.getGuild().getSelfMember()).findFirst();
@@ -57,8 +62,90 @@ public class ChatBridge extends ListenerAdapter {
                 }
             })).queue();
         }
-        this.updateRichPresence(0);
     }
+    
+    public void onMcMessage(MinecraftToDiscordMessagePayload payload) {
+
+        MessageFormat format = this.integration.getConfig().messages.formats.get(payload.type());
+
+        String customName = applyReplacements(format.customName, payload.replacements());
+        String avatarUrl =
+                payload.player() != null
+                        ? Utils.getAvatarUrl(payload.player(), this.integration.getConfig())
+                        : null;
+
+
+        MessageFormat.SendType mode = format.mode;
+
+        if (mode.equals(MessageFormat.SendType.WEBHOOK) && this.webhookClient == null) {
+            mode = MessageFormat.SendType.DEFAULT;
+        }
+
+
+        SenderStrategy strategy =
+                switch (mode) {
+                    case MessageFormat.SendType.WEBHOOK ->
+                            new WebhookSender(customName, avatarUrl, this.webhookClient);
+                    case MessageFormat.SendType.EMBED ->
+                            new EmbedSender(
+                                    Utils.hexStringToInt(format.embedColor),
+                                    avatarUrl,
+                                    customName,
+                                    this.channel);
+                    case MessageFormat.SendType.DEFAULT -> new DefaultSender(this.channel);
+                    default -> null;
+                };
+
+        String message = applyReplacements(format.format, payload.replacements());
+        DiscordSenderState state = new DiscordSenderState(message, this.channel);
+        DiscordMessageDispatcher dispatcher = new DiscordMessageDispatcher(strategy, state);
+
+        if (this.messageDispatcher != null && !this.messageDispatcher.hasChanged(dispatcher)) {
+            this.messageDispatcher.incrementCountAndEdit();
+            return;
+        }
+
+        dispatcher.send();
+        this.messageDispatcher = dispatcher;
+    }
+
+    private String applyReplacements(String message, Map<String, String> replacementsOriginal) {
+
+        if (message == null || message.isEmpty() || message.isBlank()) {
+            return message;
+        }
+
+        if (replacementsOriginal.isEmpty()) {
+            return message;
+        }
+
+        boolean hasMsg = false;
+        Map<String, String> replacements = new HashMap<>(replacementsOriginal);
+        if (replacementsOriginal.get("%msg%") != null) {
+            hasMsg = true;
+            replacements.remove("%msg%");
+        }
+
+        StringBuilder builder = new StringBuilder(message);
+        for (Entry<String, String> entry : replacements.entrySet()) {
+            int index = builder.indexOf(entry.getKey());
+            if (index == -1) {
+                continue;
+            }
+            builder.replace(index, index + entry.getKey().length(), entry.getValue());
+        }
+
+        if (hasMsg) {
+            int index = builder.indexOf("%msg%");
+            if (index != -1) {
+                builder.replace(index, index + "%msg%".length(), replacementsOriginal.get("%msg%"));
+            }
+        }
+
+        return builder.toString();
+    }
+
+
 
     private void setWebhook(Webhook webhook) {
         if (this.webhookClient != null) {
@@ -145,80 +232,6 @@ public class ChatBridge extends ListenerAdapter {
         return text;
     }
 
-    public void onPlayerJoin(ServerPlayer player) {
-        this.onPlayerJoin(player, false);
-    }
-
-    public void onPlayerJoin(ServerPlayer player, boolean vanish) {
-        this.sendMessageToDiscord(this.integration.getConfig().messages.playerJoinMessage.replace("%user%",
-            Utils.escapeUnderscores(player.getName().getString())), null, player);
-        this.updateRichPresence(vanish ? 0 : 1);
-    }
-
-    public void onPlayerTimeOut(ServerPlayer player) {
-        this.sendMessageToDiscord(this.integration.getConfig().messages.playerTimeOutMessage.replace("%user%",
-                Utils.escapeUnderscores(player.getName().getString())), null, player);
-        this.updateRichPresence(-1);
-    }
-
-    public void onPlayerLeave(ServerPlayer player) {
-        this.onPlayerLeave(player, false);
-    }
-
-    public void onPlayerLeave(ServerPlayer player, boolean vanish) {
-        if (this.stopped) {
-            return;
-        }
-        String message = this.integration.getConfig().messages.playerLeaveMessage.replace("%user%",
-                Utils.escapeUnderscores(player.getName().getString()));
-        if (vanish) {
-            this.sendMessageToDiscordUnchecked(message, null);
-        } else {
-            this.sendMessageToDiscord(message, null, player);
-        }
-        this.updateRichPresence(vanish ? 0 : -1);
-    }
-
-    private void updateRichPresence(int modifier) {
-        if (!this.integration.getConfig().showPlayerCountStatus) {
-            return;
-        }
-        long playerCount;
-        if (this.integration.getServer() == null || this.integration.getServer().getPlayerList() == null) {
-            playerCount = 0;
-        } else {
-            playerCount = this.integration.getServer().getPlayerList()
-                    .getPlayers().stream()
-                    .filter(p -> !this.integration.getVanishIntegration().isVanished(p))
-                    .count() + modifier;
-        }
-
-        this.integration.getJda().getPresence().setPresence(Activity.playing(switch ((int) playerCount) {
-            case 0 -> this.integration.getConfig().messages.onlineCountZero;
-            case 1 -> this.integration.getConfig().messages.onlineCountSingular;
-            default -> this.integration.getConfig().messages.onlineCountPlural.formatted(playerCount);
-        }), false);
-    }
-
-    public void onPlayerDeath(ServerPlayer player, DamageSource source) {
-        if (this.integration.getConfig().broadCastDeathMessages) {
-            String message = source.getLocalizedDeathMessage(player).getString();
-            if (message.equals("death.attack.badRespawnPoint")) {
-                message = "%s was killed by [Intentional Mod Design]".formatted(player.getName().getString());
-            }
-            this.sendMessageToDiscord(Utils.escapeUnderscores(message), null, player);
-        }
-    }
-
-    public void onReceiveAdvancement(ServerPlayer player, DisplayInfo advancement) {
-        if (this.integration.getConfig().announceAdvancements && advancement.shouldAnnounceChat()) {
-            this.sendMessageToDiscord(this.integration.getConfig().messages.advancementMessage.replace("%user%",
-                    Utils.escapeUnderscores(player.getName().getString()))
-                .replace("%title%", advancement.getTitle().getString())
-                .replace("%description%", advancement.getDescription().getString()), null, player);
-        }
-    }
-
     public void sendMcChatMessage(Component message) {
         if (this.integration.getServer() == null) {
             return;
@@ -226,68 +239,8 @@ public class ChatBridge extends ListenerAdapter {
         this.integration.getServer().getPlayerList().broadcastSystemMessage(message, false);
     }
 
-    private void onServerStopping(MinecraftServer minecraftServer) {
-        this.sendMessageToDiscord(this.integration.getConfig().messages.stopMessage, null, null);
-        this.stopped = true;
-    }
-
-
-    public void onMcChatMessage(String message, ServerPlayer player) {
-        if (this.integration.getConfig().waypoints.formatWaypoints) {
-            message = Utils.formatXaero(message, this.integration.getConfig());
-            message = Utils.formatVoxel(message, this.integration.getConfig(), player);
-        }
-        this.sendMessageToDiscord(message, player, player);
-    }
-
-    public void sendMessageToDiscord(String message, ServerPlayer sender, ServerPlayer connectedPlayer) {
-        if (connectedPlayer != null && this.integration.getVanishIntegration().isVanished(connectedPlayer)) {
-            return;
-        }
-        this.sendMessageToDiscordUnchecked(message, sender);
-    }
-
-    private void sendMessageToDiscordUnchecked(String message, ServerPlayer sender) {
-        if (message.trim().isEmpty()) {
-            return;
-        }
-
-        message = Utils.escapeMentions(message);
-        message = Utils.formatMentions(message, this.integration, sender);
-        if (this.messageSender == null || this.messageSender.hasChanged(message, sender)) {
-            this.messageSender = new DiscordChatMessageSender(this.webhookClient, this.channel,
-                this.integration.getConfig(), message, sender);
-        }
-            this.messageSender.sendMessage();
-    }
-
     @Override
     public void onMessageDelete(@NotNull MessageDeleteEvent event) {
-        if (this.messageSender != null) {
-            this.messageSender.onMessageDelete(event.getMessageIdLong());
-        }
-    }
-
-    public void onCommandExecute(CommandSourceStack source, String command) {
-        if (!command.startsWith("me") && !command.startsWith("say")) {
-            return;
-        }
-        ServerPlayer sender;
-        String prefix;
-        if (source.getEntity() instanceof ServerPlayer player) {
-            sender = player;
-            prefix = "";
-        } else {
-            sender = null;
-            prefix = Utils.escapeUnderscores(source.getTextName()) + ": ";
-        }
-        String data = command.split(" ", 2)[1];
-        String message;
-        if (command.startsWith("me")) {
-            message = prefix + "*" + data + "*";
-        } else {
-            message = prefix + data;
-        }
-        this.sendMessageToDiscord(message, sender, sender);
+        this.messageDispatcher = null;
     }
 }

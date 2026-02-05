@@ -2,6 +2,7 @@ package tronka.justsync;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 
 import com.mojang.brigadier.CommandDispatcher;
@@ -20,6 +21,9 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import tronka.justsync.events.ChatEvents;
+import tronka.justsync.events.payload.MessageType;
+import tronka.justsync.events.payload.MinecraftToDiscordMessagePayload;
 import tronka.justsync.linking.PlayerData;
 import tronka.justsync.linking.PlayerLink;
 
@@ -200,7 +204,11 @@ public class InGameCommand {
 
     private int sendDiscordMessage(CommandContext<CommandSourceStack> context) {
         String msg = StringArgumentType.getString(context, "message");
-        this.integration.getChatBridge().sendMessageToDiscord(msg, null, null);
+
+        ChatEvents.MINECRAFT_TO_DISCORD_CHAT_MESSAGE.invoke(
+                new MinecraftToDiscordMessagePayload(
+                        Map.of("%msg%", msg, "%user%", "Server"), null, MessageType.CHAT));
+
         context.getSource().sendSuccess(() -> Component.literal("Sent message: ").append(Component.literal(msg).withStyle(
             ChatFormatting.ITALIC, ChatFormatting.GRAY)), false);
         return 1;
