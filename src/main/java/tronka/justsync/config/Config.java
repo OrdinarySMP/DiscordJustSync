@@ -2,7 +2,6 @@ package tronka.justsync.config;
 
 import com.moandjiezana.toml.Toml;
 import com.moandjiezana.toml.comments.TomlComment;
-import com.moandjiezana.toml.TomlIgnore;
 import com.moandjiezana.toml.comments.TomlMapComment;
 import com.moandjiezana.toml.TomlWriter;
 import java.io.File;
@@ -23,11 +22,6 @@ public class Config {
     public String botToken = "";
     @TomlComment("Discord channel ID to sync with Minecraft chat (required - right-click channel and copy ID)")
     public String serverChatChannel = "";
-    @TomlComment("Use Discord webhooks for chat messages with player avatars and usernames")
-    @Deprecated(since = "1.18.0")
-    @TomlIgnore
-    public boolean useWebHooks = true;
-
     @TomlComment({
         "URL template for player profile pictures in webhook messages. Placeholders:",
         "%UUID% - player's uuid",
@@ -43,13 +37,6 @@ public class Config {
     public boolean stackMessages = false;
     @TomlComment("Time in seconds before sending a new message regardless if it is identical")
     public int stackMessagesTimeoutInSec = 60;
-
-    @Deprecated(since = "1.8.0")
-    @TomlIgnore
-    public boolean formatWaypoints = true;
-    @Deprecated(since = "1.8.0")
-    @TomlIgnore
-    public String waypointURL = "";
 
     @TomlComment("Broadcast player death messages to Discord")
     public boolean broadCastDeathMessages = true;
@@ -87,68 +74,19 @@ public class Config {
         File configFile = configDir.resolve(JustSyncApplication.MOD_ID + ".toml").toFile();
         Config instance;
         if (configFile.exists()) {
-            instance = new Toml().read(configFile).to(Config.class);
+            Toml toml = new Toml().read(configFile);
+            instance = toml.to(Config.class);
+            ConfigUpgrade.upgradeConfig(instance, toml);
         } else {
             instance = new Config();
         }
-        upgradeConfig(instance);
+
         try {
             Files.createDirectories(configDir);
             new TomlWriter().write(instance, configFile);
         } catch (IOException ignored) {
         }
         return instance;
-    }
-
-    private static void upgradeConfig(Config config) {
-        // 0 -> 1
-        if (!config.formatWaypoints) {
-            config.waypoints.formatWaypoints = false;
-        }
-        if (config.waypointURL != null && !config.waypointURL.isEmpty()) {
-            config.waypoints.mapURLs.put("Overworld", config.waypointURL);
-        }
-
-        // 1 -> 2
-        if (config.configVersion < 2) {
-            config.commands.commandLogChannel = config.commands.consoleChannel;
-            config.commands.commandChannel = config.commands.consoleChannel;
-            config.configVersion = 2;
-        }
-
-        // 2 -> 3
-        if (config.configVersion < 3) {
-            config.integrations.floodgate.allowLinkingMixedAccountTypes =
-                    config.integrations.floodgate.allowMixedAccountTypes;
-            config.integrations.floodgate.allowLinkingMixedAccountTypesBypass =
-                    config.integrations.floodgate.allowMixedAccountTypesBypass;
-            config.integrations.floodgate.linkingMixedAccountTypesDenyMessage =
-                    config.integrations.floodgate.mixedAccountTypeDenyMessage;
-            config.configVersion = 3;
-        }
-
-        // 3 -> 4
-        if (config.configVersion < 4) {
-            config.integrations.luckPerms.assignSyncedRolesToAlts = false;
-            config.configVersion = 4;
-        }
-
-        // 4 -> 5
-        if (config.configVersion < 5) {
-            config.messages.formats.get(MessageType.CHAT).mode =
-                    config.useWebHooks
-                            ? MessageFormat.SendType.WEBHOOK
-                            : MessageFormat.SendType.DEFAULT;
-            config.messages.formats.get(MessageType.JOIN).format = config.messages.playerJoinMessage;
-            config.messages.formats.get(MessageType.LEAVE).format = config.messages.playerLeaveMessage;
-            config.messages.formats.get(MessageType.TIMEOUT).format = config.messages.playerTimeOutMessage;
-            config.messages.formats.get(MessageType.ADVANCEMENT).format = config.messages.advancementMessage;
-            config.messages.formats.get(MessageType.SERVER_START).format = config.messages.startMessage;
-            config.messages.formats.get(MessageType.SERVER_STOP).format = config.messages.stopMessage;
-
-            config.configVersion = 5;
-        }
-
     }
 
     public static class LinkingOptions {
@@ -227,35 +165,6 @@ public class Config {
             "%user%: The user who executed the command",
             "%cmd%: The command the user executed"})
         public String commandExecutedInfoText = "%user% executed ``%cmd%``";
-        @TomlComment({"The message to display in discord when a player joins",
-            "Placeholder: %user%: The player name of whoever joined"})
-        @Deprecated(since = "1.18.0")
-        @TomlIgnore
-        public String playerJoinMessage = "%user% joined";
-        @TomlComment({"The message to display in discord when a player leaves",
-            "Placeholder: %user%: The player name of whoever left"})
-        @Deprecated(since = "1.18.0")
-        @TomlIgnore
-        public String playerLeaveMessage = "%user% left";
-        @TomlComment({"The message to display in discord when a player times out",
-            "Placeholder: %user%: The player name of whoever timed out"})
-        @Deprecated(since = "1.18.0")
-        @TomlIgnore
-        public String playerTimeOutMessage = "%user% timed out";
-        @TomlComment({"The formatting to use for commands sent to the console channel",
-            "Placeholders:",
-            "%user%: The user who received the advancement",
-            "%title%: Advancement title",
-            "%description%: Advancement description"})
-        @Deprecated(since = "1.18.0")
-        @TomlIgnore
-        public String advancementMessage = "%user% just made the advancement **%title%**\n*%description%*";
-        @Deprecated(since = "1.18.0")
-        @TomlIgnore
-        public String startMessage = "Server started";
-        @Deprecated(since = "1.18.0")
-        @TomlIgnore
-        public String stopMessage = "Server stopped";
         @TomlComment({
             "Formatting to use for the online player count status if there is more than 1 player online, related to showPlayerCountStatus",
             "Placeholder: %d: Player count"})
@@ -339,17 +248,6 @@ public class Config {
         public FloodGateIntegration floodgate = new FloodGateIntegration();
 
         public static class FloodGateIntegration {
-            @TomlIgnore
-            @Deprecated(since = "1.13.0")
-            public boolean allowMixedAccountTypes = true;
-            @TomlIgnore
-            @Deprecated(since = "1.13.0")
-            public List<String> allowMixedAccountTypesBypass= new ArrayList<>();
-            @TomlIgnore
-            @Deprecated(since = "1.13.0")
-            public String mixedAccountTypeDenyMessage = "You are not allowed to mix account types on this server";
-
-
             @TomlComment({"Floodgate https://modrinth.com/mod/floodgate",
                 "set to false to disable java players linking bedrock as alts and vice versa"})
             public boolean allowLinkingMixedAccountTypes = true;
@@ -378,11 +276,6 @@ public class Config {
     }
 
     public static class CommandSettings {
-
-        @Deprecated(since = "1.10.0")
-        @TomlIgnore
-        public String consoleChannel = "";
-
         @TomlComment("Discord channel ID where executed commands will be logged")
         public String commandLogChannel = "";
         @TomlComment("Discord channel ID where commands can be executed from")
