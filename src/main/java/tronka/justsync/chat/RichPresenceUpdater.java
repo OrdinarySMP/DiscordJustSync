@@ -19,13 +19,13 @@ public class RichPresenceUpdater {
     }
 
     private void onConfigLoaded(Config config) {
-        if (this.integration.getServer() == null) {
+        if (this.integration.getServer() != null || this.integration.getServer().getPlayerList() != null) {
+            this.onlineCount = this.integration.getServer().getPlayerList()
+                    .getPlayers().stream()
+                    .filter(p -> !this.integration.getVanishIntegration().isVanished(p))
+                    .count();
             return;
         }
-        this.onlineCount = this.integration.getServer().getPlayerList()
-                .getPlayers().stream()
-                .filter(p -> !this.integration.getVanishIntegration().isVanished(p))
-                .count();
         this.updateRichPresence();
     }
 
