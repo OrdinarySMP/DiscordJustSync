@@ -365,4 +365,15 @@ public final class Utils {
         }
         return avatarUrl;
     }
+
+    public static int hexStringToInt(String hex) {
+        if (hex == null || hex.isEmpty() || hex.isBlank()) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(hex, 16);
+        } catch (NumberFormatException ignored) {
+            return -1;
+        }
+    }
 }

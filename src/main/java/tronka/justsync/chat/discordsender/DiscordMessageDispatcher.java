@@ -64,8 +64,8 @@ public class DiscordMessageDispatcher {
     }
 
     public boolean hasChanged(DiscordMessageDispatcher sender) {
-        return this.state.getChannel().getLatestMessageIdLong() == this.state.getMessageId()
-                && this.state.getMessage().equals(sender.state.getMessage())
-                && this.strategy.hasChanged(sender.strategy);
+        return this.state.getChannel().getLatestMessageIdLong() != this.state.getMessageId()
+                || !this.state.getMessage().equals(sender.state.getMessage())
+                || this.strategy.hasChanged(sender.strategy);
     }
 }

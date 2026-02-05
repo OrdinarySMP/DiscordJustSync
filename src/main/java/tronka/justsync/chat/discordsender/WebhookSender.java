@@ -38,7 +38,7 @@ public class WebhookSender implements SenderStrategy {
 
     @Override
     public boolean hasChanged(SenderStrategy strategy) {
-        return this.equals(strategy);
+        return !this.equals(strategy);
     }
 
     @Override

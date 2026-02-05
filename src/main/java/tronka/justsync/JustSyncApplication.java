@@ -22,6 +22,8 @@ import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import tronka.justsync.chat.ChatBridge;
+import tronka.justsync.chat.MinecraftToDiscordPreprocessor;
+import tronka.justsync.chat.RichPresenceUpdater;
 import tronka.justsync.compat.FloodgateIntegration;
 import tronka.justsync.compat.LuckPermsIntegration;
 import tronka.justsync.compat.VanishIntegration;
@@ -49,6 +51,8 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
     private FloodgateIntegration floodgateIntegration;
     private TimeoutManager timeoutManager;
     private DiscordLogger discordLogger;
+    private RichPresenceUpdater richPresenceUpdater;
+    private MinecraftToDiscordPreprocessor minecraftToDiscordPreprocessor;
 
     public static JustSyncApplication getInstance() {
         return instance;
@@ -123,6 +127,8 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
             this.vanishIntegration = new VanishIntegration(this);
             this.floodgateIntegration = new FloodgateIntegration(this);
             this.jda.addEventListener(new DiscordEvents(this));
+            this.richPresenceUpdater = new RichPresenceUpdater(this);
+            this.minecraftToDiscordPreprocessor = new MinecraftToDiscordPreprocessor(this);
             this.registerConfigReloadHandler(this::onConfigReloaded);
         } catch (Exception e) {
             LOGGER.error("failed to initialize Discord Just Sync! Please report this crash on github or our discord server!", e);

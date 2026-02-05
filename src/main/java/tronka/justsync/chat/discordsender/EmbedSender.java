@@ -14,40 +14,44 @@ public class EmbedSender implements SenderStrategy {
     private String user;
     private TextChannel channel;
 
-    public EmbedSender(int color, String avatarUrl, String user) {
+    public EmbedSender(int color, String avatarUrl, String name, TextChannel channel) {
         this.color = color;
         this.avatarUrl = avatarUrl;
-        this.user = user;
+        this.user = name;
+        this.channel = channel;
     }
 
     @Override
     public CompletableFuture<Long> send(String message) {
-        MessageEmbed embed =
+        EmbedBuilder builder =
                 new EmbedBuilder()
-                        .setAuthor(null, null, this.avatarUrl)
-                        .setColor(this.color)
-                        .setTitle(user)
-                        .setDescription(message)
-                        .build();
+                        .setAuthor(this.user, null, this.avatarUrl)
+                        .setDescription(message);
 
-        return this.channel.sendMessageEmbeds(embed).submit().thenApply(Message::getIdLong);
+        if (this.color != -1) {
+            builder.setColor(this.color);
+        }
+
+        return this.channel.sendMessageEmbeds(builder.build()).submit().thenApply(Message::getIdLong);
     }
 
     @Override
     public CompletableFuture<Void> edit(String message, Long messageId) {
-        MessageEmbed embed =
+        EmbedBuilder builder =
                 new EmbedBuilder()
-                        .setAuthor(null, null, this.avatarUrl)
-                        .setColor(this.color)
-                        .setTitle(user)
-                        .setDescription(message)
-                        .build();
-        return this.channel.editMessageEmbedsById(messageId, embed).submit().thenAccept(m -> {});
+                        .setAuthor(this.user, null, this.avatarUrl)
+                        .setDescription(message);
+
+        if (this.color != -1) {
+            builder.setColor(this.color);
+        }
+
+        return this.channel.editMessageEmbedsById(messageId, builder.build()).submit().thenAccept(m -> {});
     }
 
     @Override
     public boolean hasChanged(SenderStrategy strategy) {
-        return this.equals(strategy);
+        return !this.equals(strategy);
     }
 
     @Override

@@ -25,6 +25,6 @@ public class DefaultSender implements SenderStrategy {
 
     @Override
     public boolean hasChanged(SenderStrategy strategy) {
-        return false;
+        return true;
     }
 }
