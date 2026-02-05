@@ -16,6 +16,7 @@ public class DiscordMessageDispatcher {
     public void send() {
         this.state.setCount(1);
         this.state.setSentCount(1);
+        this.state.setLastMessageEdit(System.currentTimeMillis());
         this.state.setFuture(this.strategy.send(this.state.getMessage()).thenAccept(this::setId));
     }
 
@@ -60,12 +61,14 @@ public class DiscordMessageDispatcher {
         String message = this.state.getMessage() + " *(" + this.state.getCount() + ")*";
         this.state.setSentCount(this.state.getCount());
         this.state.setEditPending(false);
+        this.state.setLastMessageEdit(System.currentTimeMillis());
         this.state.setFuture(this.strategy.edit(message, this.state.getMessageId()));
     }
 
-    public boolean hasChanged(DiscordMessageDispatcher sender) {
+    public boolean hasChanged(DiscordMessageDispatcher sender, long timeout) {
         return this.state.getChannel().getLatestMessageIdLong() != this.state.getMessageId()
                 || !this.state.getMessage().equals(sender.state.getMessage())
-                || this.strategy.hasChanged(sender.strategy);
+                || this.strategy.hasChanged(sender.strategy)
+                || System.currentTimeMillis() - this.state.getLastMessageEdit() > timeout * 1000;
     }
 }

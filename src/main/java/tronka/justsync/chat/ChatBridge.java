@@ -100,7 +100,11 @@ public class ChatBridge extends ListenerAdapter {
         DiscordSenderState state = new DiscordSenderState(message, this.channel);
         DiscordMessageDispatcher dispatcher = new DiscordMessageDispatcher(strategy, state);
 
-        if (this.messageDispatcher != null && !this.messageDispatcher.hasChanged(dispatcher)) {
+        if (this.integration.getConfig().stackMessages
+                && this.messageDispatcher != null
+                        && !this.messageDispatcher.hasChanged(
+                                dispatcher,
+                                this.integration.getConfig().stackMessagesTimeoutInSec)) {
             this.messageDispatcher.incrementCountAndEdit();
             return;
         }
