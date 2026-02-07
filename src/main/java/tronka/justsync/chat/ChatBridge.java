@@ -29,6 +29,7 @@ import tronka.justsync.chat.discordsender.SenderStrategy;
 import tronka.justsync.chat.discordsender.WebhookSender;
 import tronka.justsync.config.Config;
 import tronka.justsync.config.MessageFormat;
+import tronka.justsync.config.MessageFormat.SendType;
 import tronka.justsync.events.ChatEvents;
 import tronka.justsync.events.payload.MinecraftToDiscordMessagePayload;
 
@@ -65,38 +66,50 @@ public class ChatBridge extends ListenerAdapter {
     }
     
     public void onMcMessage(MinecraftToDiscordMessagePayload payload) {
-
         MessageFormat format = this.integration.getConfig().messages.formats.get(payload.type());
 
+        SendType mode = format.mode;
+
+        if (mode == SendType.DISABLED) {
+            return;
+        }
+
+        if (mode == SendType.WEBHOOK && this.webhookClient == null) {
+            mode = SendType.DEFAULT;
+        }
+
+        String message = applyReplacements(format.format, payload.replacements());
+        if (message == null || message.isBlank()) {
+            // Discord does not accept empty messages
+            return;
+        }
+
         String customName = applyReplacements(format.customName, payload.replacements());
+        if ((customName == null || customName.isBlank())
+                && (mode == SendType.WEBHOOK || mode == SendType.EMBED)) {
+            // Discord does not like empty fields
+            return;
+        }
+
         String avatarUrl =
                 payload.player() != null
                         ? Utils.getAvatarUrl(payload.player(), this.integration.getConfig())
                         : null;
 
-
-        MessageFormat.SendType mode = format.mode;
-
-        if (mode.equals(MessageFormat.SendType.WEBHOOK) && this.webhookClient == null) {
-            mode = MessageFormat.SendType.DEFAULT;
-        }
-
-
         SenderStrategy strategy =
                 switch (mode) {
-                    case MessageFormat.SendType.WEBHOOK ->
+                    case SendType.WEBHOOK ->
                             new WebhookSender(customName, avatarUrl, this.webhookClient);
-                    case MessageFormat.SendType.EMBED ->
+                    case SendType.EMBED ->
                             new EmbedSender(
                                     Utils.hexStringToInt(format.embedColor),
                                     avatarUrl,
                                     customName,
                                     this.channel);
-                    case MessageFormat.SendType.DEFAULT -> new DefaultSender(this.channel);
+                    case SendType.DEFAULT -> new DefaultSender(this.channel);
                     default -> null;
                 };
 
-        String message = applyReplacements(format.format, payload.replacements());
         DiscordSenderState state = new DiscordSenderState(message, this.channel);
         DiscordMessageDispatcher dispatcher = new DiscordMessageDispatcher(strategy, state);
 
@@ -114,8 +127,7 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     private String applyReplacements(String message, Map<String, String> replacementsOriginal) {
-
-        if (message == null || message.isEmpty() || message.isBlank()) {
+        if (message == null || message.isBlank()) {
             return message;
         }
 
@@ -123,12 +135,8 @@ public class ChatBridge extends ListenerAdapter {
             return message;
         }
 
-        boolean hasMsg = false;
         Map<String, String> replacements = new HashMap<>(replacementsOriginal);
-        if (replacementsOriginal.get("%msg%") != null) {
-            hasMsg = true;
-            replacements.remove("%msg%");
-        }
+        replacements.remove("%msg%");
 
         StringBuilder builder = new StringBuilder(message);
         for (Entry<String, String> entry : replacements.entrySet()) {
@@ -139,7 +147,8 @@ public class ChatBridge extends ListenerAdapter {
             builder.replace(index, index + entry.getKey().length(), entry.getValue());
         }
 
-        if (hasMsg) {
+        // replace %msg% last to prevent user injection of formatting codes
+        if (replacementsOriginal.containsKey("%msg%")) {
             int index = builder.indexOf("%msg%");
             if (index != -1) {
                 builder.replace(index, index + "%msg%".length(), replacementsOriginal.get("%msg%"));
@@ -148,8 +157,6 @@ public class ChatBridge extends ListenerAdapter {
 
         return builder.toString();
     }
-
-
 
     private void setWebhook(Webhook webhook) {
         if (this.webhookClient != null) {
