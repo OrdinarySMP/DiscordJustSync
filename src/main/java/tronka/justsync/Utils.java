@@ -367,7 +367,7 @@ public final class Utils {
     }
 
     public static int hexStringToInt(String hex) {
-        if (hex == null || hex.isEmpty() || hex.isBlank()) {
+        if (hex == null || hex.isBlank()) {
             return -1;
         }
         try {

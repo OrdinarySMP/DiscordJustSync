@@ -2,17 +2,16 @@ package tronka.justsync.chat.discordsender;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 
 import java.util.concurrent.CompletableFuture;
 
 public class EmbedSender implements SenderStrategy {
 
-    private int color;
-    private String avatarUrl;
-    private String user;
-    private TextChannel channel;
+    private final int color;
+    private final String avatarUrl;
+    private final String user;
+    private final TextChannel channel;
 
     public EmbedSender(int color, String avatarUrl, String name, TextChannel channel) {
         this.color = color;
@@ -87,12 +86,8 @@ public class EmbedSender implements SenderStrategy {
             return false;
         }
         if (user == null) {
-            if (other.user != null) {
-                return false;
-            }
-        } else if (!user.equals(other.user)) {
-            return false;
+            return other.user == null;
         }
-        return true;
+        return user.equals(other.user);
     }
 }

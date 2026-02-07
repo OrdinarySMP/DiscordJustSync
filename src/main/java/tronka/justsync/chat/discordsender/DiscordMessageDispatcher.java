@@ -5,8 +5,8 @@ import java.util.concurrent.TimeUnit;
 
 public class DiscordMessageDispatcher {
 
-    private DiscordSenderState state;
-    private SenderStrategy strategy;
+    private final DiscordSenderState state;
+    private final SenderStrategy strategy;
 
     public DiscordMessageDispatcher(SenderStrategy strategy, DiscordSenderState state) {
         this.state = state;
@@ -60,8 +60,8 @@ public class DiscordMessageDispatcher {
     private void editMessage() {
         String message = this.state.getMessage() + " *(" + this.state.getCount() + ")*";
         this.state.setSentCount(this.state.getCount());
-        this.state.setEditPending(false);
         this.state.setLastMessageEdit(System.currentTimeMillis());
+        this.state.setEditPending(false);
         this.state.setFuture(this.strategy.edit(message, this.state.getMessageId()));
     }
 

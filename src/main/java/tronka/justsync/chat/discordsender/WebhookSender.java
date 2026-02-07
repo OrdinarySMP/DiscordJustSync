@@ -9,9 +9,9 @@ import java.util.concurrent.CompletableFuture;
 
 public class WebhookSender implements SenderStrategy {
 
-    private String webhookName;
-    private String avatarUrl;
-    private WebhookClient webhookClient;
+    private final String webhookName;
+    private final String avatarUrl;
+    private final WebhookClient webhookClient;
 
     public WebhookSender(String webhookName, String avatarUrl, WebhookClient webhookClient) {
         this.webhookName = webhookName;
@@ -70,12 +70,8 @@ public class WebhookSender implements SenderStrategy {
             return false;
         }
         if (avatarUrl == null) {
-            if (other.avatarUrl != null) {
-                return false;
-            }
-        } else if (!avatarUrl.equals(other.avatarUrl)) {
-            return false;
+            return other.avatarUrl == null;
         }
-        return true;
+        return avatarUrl.equals(other.avatarUrl);
     }
 }

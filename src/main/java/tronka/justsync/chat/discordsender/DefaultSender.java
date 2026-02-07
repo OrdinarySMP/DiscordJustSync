@@ -7,7 +7,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class DefaultSender implements SenderStrategy {
 
-    private TextChannel channel;
+    private final TextChannel channel;
 
     public DefaultSender(TextChannel channel) {
         this.channel = channel;
