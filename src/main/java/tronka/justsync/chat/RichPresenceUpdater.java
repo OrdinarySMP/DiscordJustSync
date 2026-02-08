@@ -19,29 +19,29 @@ public class RichPresenceUpdater {
     }
 
     private void onConfigLoaded(Config config) {
-        if (this.integration.getServer() != null || this.integration.getServer().getPlayerList() != null) {
+        if (this.integration.getServer() != null && this.integration.getServer().getPlayerList() != null) {
             this.onlineCount = this.integration.getServer().getPlayerList()
                     .getPlayers().stream()
                     .filter(p -> !this.integration.getVanishIntegration().isVanished(p))
                     .count();
-            return;
         }
         this.updateRichPresence();
     }
 
     private void onPlayerJoin(ServerPlayer player) {
         this.onlineCount++;
+        this.updateRichPresence();
     }
 
     private void onPlayerLeave(ServerPlayer player) {
         this.onlineCount--;
+        this.updateRichPresence();
     }
 
     private void updateRichPresence() {
         if (!this.integration.getConfig().showPlayerCountStatus) {
             return;
         }
-
         this.integration.getJda().getPresence().setPresence(Activity.playing(switch ((int) this.onlineCount) {
             case 0 -> this.integration.getConfig().messages.onlineCountZero;
             case 1 -> this.integration.getConfig().messages.onlineCountSingular;

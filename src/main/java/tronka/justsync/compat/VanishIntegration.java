@@ -19,8 +19,12 @@ public class VanishIntegration {
         if (!FabricLoader.getInstance().isModLoaded("melius-vanish")) {
             return;
         }
+
         integration.registerConfigReloadHandler(this::onConfigLoaded);
         VanishEvents.VANISH_EVENT.register(this::onVanishChanged);
+        CoreEvents.PLAYER_JOIN.addFilter(this::filterJoinLeave);
+        CoreEvents.PLAYER_DISCONNECT.addFilter(this::filterJoinLeave);
+        CoreEvents.PLAYER_TIMEOUT.addFilter(this::filterJoinLeave);
         ChatEvents.MINECRAFT_TO_DISCORD_CHAT_MESSAGE.addFilter(this::filterVanishChat);
     }
 
@@ -35,6 +39,10 @@ public class VanishIntegration {
             CoreEvents.PLAYER_JOIN.invoke(player);
         }
         this.priorityMessageSending = false;
+    }
+
+    private boolean filterJoinLeave(ServerPlayer player) {
+        return !this.isVanished(player) || this.priorityMessageSending;
     }
 
     private boolean filterVanishChat(MinecraftToDiscordMessagePayload payload) {
