@@ -5,6 +5,7 @@ import com.mojang.logging.LogUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -78,7 +79,7 @@ public class LinkManager {
     }
 
     public boolean hasRequiredRoles(Member member) {
-        List<Role> roles = new ArrayList<>(member.getRoles());
+        Set<Role> roles = new HashSet<>(member.getRoles());
         if (this.integration.getConfig().linking.requiredRolesCount == -1) {
             return roles.containsAll(this.requiredRoles);
         }
@@ -87,7 +88,11 @@ public class LinkManager {
     }
 
     public boolean hasRequiredRoles(long discordId) {
-        return this.hasRequiredRoles(this.integration.getGuild().getMemberById(discordId));
+        Member member = this.integration.getGuild().getMemberById(discordId);
+        if (member == null) {
+            return false;
+        }
+        return this.hasRequiredRoles(member);
     }
 
     public Optional<Member> getDiscordOf(PlayerLink link) {

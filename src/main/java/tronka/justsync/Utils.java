@@ -75,7 +75,10 @@ public final class Utils {
     }
 
     public static Optional<Role> parseRole(Guild guild, String roleId) {
-        Role role = guild.getRoleById(roleId);
+        Role role = null;
+        try {
+            role = guild.getRoleById(roleId);
+        } catch (NumberFormatException ignored) { }
         if (role != null) {
             return Optional.of(role);
         }
