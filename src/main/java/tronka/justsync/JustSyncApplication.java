@@ -28,6 +28,7 @@ import tronka.justsync.compat.FloodgateIntegration;
 import tronka.justsync.compat.LuckPermsIntegration;
 import tronka.justsync.compat.VanishIntegration;
 import tronka.justsync.config.Config;
+import tronka.justsync.config.ConfigValidator;
 import tronka.justsync.linking.LinkManager;
 
 public class JustSyncApplication extends ListenerAdapter implements DedicatedServerModInitializer {
@@ -204,6 +205,11 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
     public String tryReloadConfig() {
         LOGGER.info("Reloading Config...");
         Config newConfig = Config.loadConfig();
+
+        ConfigValidator validator = new ConfigValidator(newConfig);
+        validator.validate();
+        validator.sendMessage(LOGGER);
+
         TextChannel serverChatChannel = Utils.getTextChannel(this.jda, newConfig.serverChatChannel, "serverChatChannel");
         if (serverChatChannel == null) {
             return "Fail to load config: Please enter a valid serverChatChannelId in the config file in " + getConfigFolder().toAbsolutePath();
