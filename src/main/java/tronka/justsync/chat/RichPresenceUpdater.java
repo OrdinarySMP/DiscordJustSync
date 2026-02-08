@@ -42,6 +42,7 @@ public class RichPresenceUpdater {
         if (!this.integration.getConfig().showPlayerCountStatus) {
             return;
         }
+
         this.integration.getJda().getPresence().setPresence(Activity.playing(switch ((int) this.onlineCount) {
             case 0 -> this.integration.getConfig().messages.onlineCountZero;
             case 1 -> this.integration.getConfig().messages.onlineCountSingular;
