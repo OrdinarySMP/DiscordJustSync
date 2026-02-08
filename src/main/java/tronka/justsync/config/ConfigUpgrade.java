@@ -1,7 +1,9 @@
 package tronka.justsync.config;
 
 import com.moandjiezana.toml.Toml;
+import tronka.justsync.config.Config.MessageStrings;
 import tronka.justsync.events.payload.MessageType;
+import java.util.Map.Entry;
 
 public class ConfigUpgrade {
     public static void upgradeConfig(Config config, Toml toml) {
@@ -50,6 +52,11 @@ public class ConfigUpgrade {
         if (config.configVersion < 4) {
             config.integrations.luckPerms.assignSyncedRolesToAlts = false;
             config.configVersion = 4;
+        }
+
+        // restore missing format items
+        for (Entry<MessageType, MessageFormat> entries : MessageStrings.DEFAULT_FORMATS.entrySet()) {
+            config.messages.formats.putIfAbsent(entries.getKey(), entries.getValue());
         }
 
         // 4 -> 5: migrate message-format fields
