@@ -87,8 +87,7 @@ public class ChatBridge extends ListenerAdapter {
         String customName = applyReplacements(format.customName, payload.replacements());
         if ((customName == null || customName.isBlank())
                 && (mode == SendType.WEBHOOK || mode == SendType.EMBED)) {
-            // Discord does not like empty fields
-            return;
+            customName = this.integration.getGuild().getSelfMember().getEffectiveName();
         }
 
         String avatarUrl =
