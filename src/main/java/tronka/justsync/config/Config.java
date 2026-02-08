@@ -213,16 +213,18 @@ public class Config {
                 "Placeholders:",
                 "- %msg%: the message submitted with the command",
                 "- %user%: player name or 'Server' for console"})
-        public EnumMap<MessageType, MessageFormat> formats = new EnumMap<>(Map.of(
-                MessageType.CHAT, new MessageFormat(MessageFormat.SendType.WEBHOOK, "%msg%", null, "%user%"),
-                MessageType.COMMAND_SAY, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user%: %msg%", null, null),
-                MessageType.JOIN, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% joined", null, null),
-                MessageType.LEAVE, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% left", null, null),
-                MessageType.TIMEOUT, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% timed out", null, null),
-                MessageType.DEATH, new MessageFormat(MessageFormat.SendType.DEFAULT, "%msg%", null, null),
-                MessageType.ADVANCEMENT, new MessageFormat(MessageFormat.SendType.EMBED, "*%description%*", null, "%user% made the advancement %title%"),
-                MessageType.SERVER_START, new MessageFormat(MessageFormat.SendType.DEFAULT, "Server started", null, null),
-                MessageType.SERVER_STOP, new MessageFormat(MessageFormat.SendType.DEFAULT, "Server stopped", null, null)
+        public EnumMap<MessageType, MessageFormat> formats = new EnumMap<>(DEFAULT_FORMATS);
+
+        public static final EnumMap<MessageType, MessageFormat> DEFAULT_FORMATS = new EnumMap<>(Map.of(
+            MessageType.CHAT, new MessageFormat(MessageFormat.SendType.WEBHOOK, "%msg%", null, "%user%"),
+            MessageType.COMMAND_SAY, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user%: %msg%", null, null),
+            MessageType.JOIN, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% joined", null, null),
+            MessageType.LEAVE, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% left", null, null),
+            MessageType.TIMEOUT, new MessageFormat(MessageFormat.SendType.DEFAULT, "%user% timed out", null, null),
+            MessageType.DEATH, new MessageFormat(MessageFormat.SendType.DEFAULT, "%msg%", null, null),
+            MessageType.ADVANCEMENT, new MessageFormat(MessageFormat.SendType.EMBED, "*%description%*", null, "%user% made the advancement %title%"),
+            MessageType.SERVER_START, new MessageFormat(MessageFormat.SendType.DEFAULT, "Server started", null, null),
+            MessageType.SERVER_STOP, new MessageFormat(MessageFormat.SendType.DEFAULT, "Server stopped", null, null)
         ));
     }
 
