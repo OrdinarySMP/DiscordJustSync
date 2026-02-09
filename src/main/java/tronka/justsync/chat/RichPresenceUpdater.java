@@ -1,5 +1,6 @@
 package tronka.justsync.chat;
 
+import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
 import net.minecraft.server.level.ServerPlayer;
 import tronka.justsync.JustSyncApplication;
@@ -8,7 +9,7 @@ import tronka.justsync.events.CoreEvents;
 
 public class RichPresenceUpdater {
     private final JustSyncApplication integration;
-    private long onlineCount = 0;
+    private int onlineCount = 0;
     public RichPresenceUpdater(JustSyncApplication integration) {
         this.integration = integration;
         integration.registerConfigReloadHandler(this::onConfigLoaded);
@@ -20,12 +21,13 @@ public class RichPresenceUpdater {
 
     private void onConfigLoaded(Config config) {
         if (this.integration.getServer() != null && this.integration.getServer().getPlayerList() != null) {
-            this.onlineCount = this.integration.getServer().getPlayerList()
+            this.onlineCount = (int) this.integration.getServer().getPlayerList()
                     .getPlayers().stream()
                     .filter(p -> !this.integration.getVanishIntegration().isVanished(p))
                     .count();
         }
         this.updateRichPresence();
+        this.integration.getJda().getPresence().setStatus(OnlineStatus.ONLINE);
     }
 
     private void onPlayerJoin(ServerPlayer player) {
@@ -39,14 +41,18 @@ public class RichPresenceUpdater {
     }
 
     private void updateRichPresence() {
-        if (!this.integration.getConfig().showPlayerCountStatus) {
-            return;
+        if (this.integration.getConfig().showPlayerCountStatus) {
+            String message = switch (this.onlineCount) {
+                case 0 -> this.integration.getConfig().messages.onlineCountZero;
+                case 1 -> this.integration.getConfig().messages.onlineCountSingular;
+                default -> this.integration.getConfig().messages.onlineCountPlural.formatted(this.onlineCount);
+            };
+            Activity activity = message.isBlank() ? null : Activity.playing(message);
+            this.integration.getJda().getPresence().setActivity(activity);
         }
-
-        this.integration.getJda().getPresence().setPresence(Activity.playing(switch ((int) this.onlineCount) {
-            case 0 -> this.integration.getConfig().messages.onlineCountZero;
-            case 1 -> this.integration.getConfig().messages.onlineCountSingular;
-            default -> this.integration.getConfig().messages.onlineCountPlural.formatted(this.onlineCount);
-        }), false);
+        if (this.integration.getConfig().showAsIdle) {
+            OnlineStatus status = this.onlineCount == 0 ? OnlineStatus.IDLE : OnlineStatus.ONLINE;
+            this.integration.getJda().getPresence().setStatus(status);
+        }
     }
 }

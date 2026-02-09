@@ -45,6 +45,8 @@ public class Config {
 
     @TomlComment("Display online player count in the Discord bot's activity status")
     public boolean showPlayerCountStatus = true;
+    @TomlComment("Show the bot as idle when no player is online")
+    public boolean showAsIdle = true;
 
     @TomlComment({"Prevent Discord users from using Minecraft formatting codes (§ symbols)",
         "Reference: https://minecraft.wiki/w/Formatting_codes"})
