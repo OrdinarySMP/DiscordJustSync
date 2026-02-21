@@ -167,8 +167,9 @@ public class ConsoleBridge extends ListenerAdapter {
     }
 
     private MessageEmbed getHelpEmbed() {
+        String prefix = this.integration.getConfig().commands.commandPrefix;
         List<String> lines = this.integration.getConfig().commands.commandList.stream().map(
-            command -> "%s %s".formatted(command.commandName, command.inGameAction.replace("%args%", "<args>").trim())
+            command -> "%s%s <args> (`%s`)".formatted(prefix, command.commandName, command.inGameAction.replace("%args%", "<args>").trim())
         ).toList();
 
         EmbedBuilder embed = new EmbedBuilder();
