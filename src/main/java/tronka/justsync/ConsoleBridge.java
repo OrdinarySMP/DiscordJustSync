@@ -36,15 +36,15 @@ public class ConsoleBridge extends ListenerAdapter {
 
     private void onConfigLoaded(Config config) {
         this.commandLogChannel =
-                Utils.getTextChannel(
-                        this.integration.getJda(),
-                        config.commands.commandLogChannel,
-                        "commandLogChannel");
+            Utils.getTextChannel(
+                this.integration.getJda(),
+                config.commands.commandLogChannel,
+                "commandLogChannel");
         this.commandChannel =
-                Utils.getTextChannel(
-                        this.integration.getJda(),
-                        config.commands.commandChannel,
-                        "commandChannel");
+            Utils.getTextChannel(
+                this.integration.getJda(),
+                config.commands.commandChannel,
+                "commandChannel");
         this.messageSender = null;
         String opRoleId = this.integration.getConfig().commands.opRole;
         if (this.commandChannel != null && !opRoleId.isEmpty()) {
@@ -55,20 +55,20 @@ public class ConsoleBridge extends ListenerAdapter {
         this.logRedirects = new ArrayList<>();
         for (Config.LogRedirectChannel logRedirectChannel : config.commands.logRedirectChannels) {
             TextChannel channel =
-                    Utils.getTextChannel(
-                            this.integration.getJda(),
-                            logRedirectChannel.channel,
-                            "logRedirectChannel");
+                Utils.getTextChannel(
+                    this.integration.getJda(),
+                    logRedirectChannel.channel,
+                    "logRedirectChannel");
             if (channel != null) {
                 this.logRedirects.add(
-                        new LogRedirect(channel, logRedirectChannel.redirectPrefixes));
+                    new LogRedirect(channel, logRedirectChannel.redirectPrefixes));
             } else {
                 String join = String.join(", ", logRedirectChannel.redirectPrefixes);
                 LogUtils.getLogger()
-                        .info(
-                                "Could not load log redirect: ID: \"{}\", redirects: [{}]",
-                                logRedirectChannel.channel,
-                                join);
+                    .info(
+                        "Could not load log redirect: ID: \"{}\", redirects: [{}]",
+                        logRedirectChannel.channel,
+                        join);
             }
         }
     }
@@ -84,8 +84,8 @@ public class ConsoleBridge extends ListenerAdapter {
         }
 
         if (source.getEntity() == null
-                && !source.getTextName().equals("Server")
-                && !this.integration.getConfig().commands.logCommandBlockCommands) {
+            && !source.getTextName().equals("Server")
+            && !this.integration.getConfig().commands.logCommandBlockCommands) {
             return;
         }
 
@@ -100,17 +100,17 @@ public class ConsoleBridge extends ListenerAdapter {
             }
         }
         String message =
-                this.integration
-                        .getConfig()
-                        .messages
-                        .commandExecutedInfoText
-                        .replace("%user%", Utils.escapeUnderscores(source.getTextName()))
-                        .replace("%cmd%", command);
+            this.integration
+                .getConfig()
+                .messages
+                .commandExecutedInfoText
+                .replace("%user%", Utils.escapeUnderscores(source.getTextName()))
+                .replace("%cmd%", command);
 
         if (this.messageSender == null || this.messageSender.hasChanged(message, null)) {
             this.messageSender =
-                    new DiscordChatMessageSender(
-                            null, target, this.integration.getConfig(), message, null);
+                new DiscordChatMessageSender(
+                    null, target, this.integration.getConfig(), message, null);
         }
         this.messageSender.sendMessage();
     }
@@ -154,7 +154,11 @@ public class ConsoleBridge extends ListenerAdapter {
             try {
                 this.integration.getServer().getCommands().getDispatcher().execute(inGameCommand, commandSender);
             } catch (CommandSyntaxException e) {
-                throw new RuntimeException(e);
+                String messageToSend = "Error executing command: %s".formatted(e.getMessage());
+                if (messageToSend.length() > 2000) {
+                    messageToSend = messageToSend.substring(0, 2000);
+                }
+                event.getChannel().sendMessage(messageToSend).queue();
             }
         } else {
             event.getChannel().sendMessage("Unknown command: \"%s\", use %shelp for a list of commands"
