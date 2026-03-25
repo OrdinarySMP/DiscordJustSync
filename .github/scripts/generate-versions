@@ -13,17 +13,27 @@ for i in $versions; do
     if [[ -z "$last_version" ]]; then
         last_version="$latest_release"
     fi
-    MAJOR_MINOR=$(echo "$i" | cut -d. -f1,2)
-    START_PATCH=$(echo "$i" | cut -d. -f3)
-    END_PATCH=$(echo "$last_version" | cut -d. -f3)
 
-    arr["$i"]=$(seq $START_PATCH $END_PATCH | awk -v mm="$MAJOR_MINOR" '{print mm "." $1}' | jq -R . | jq -s -c .)
+    IFS="." read -r i_major i_minor i_patch <<<"$i"
+    IFS="." read -r last_major last_minor last_patch <<<"$last_version"
+
+    if [[ -z "$i_patch" ]]; then
+        i_patch=0
+    fi
+    if [[ -z "$last_patch" ]]; then
+        last_patch=0
+    fi
+
+    START_PATCH="$i_patch"
+    END_PATCH="$last_patch"
+
+    arr["$i"]=$(
+    seq "$START_PATCH" "$END_PATCH" \
+        | awk -v mm="$i_major.$i_minor" '{print mm ($1==0 ? "" : "." $1)}' \
+        | jq -R . | jq -s -c .
+    )
 done
 
-# for key in ${!arr[@]}
-# do
-#     echo "[DEBUG] ${key}: ${arr[${key}]}"
-# done
 
 jq -n --argjson n "${#arr[@]}" '
     reduce range($n) as $i ({};
