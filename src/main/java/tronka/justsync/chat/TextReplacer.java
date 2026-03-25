@@ -15,8 +15,14 @@ public class TextReplacer {
 
     private TextReplacer(TagLikeParser.Format format) {
         this.placeholders = new HashMap<>();
-        this.builder = NodeParser.builder().globalPlaceholders().placeholders(format, this.placeholders::get)
-            .simplifiedTextFormat();
+        this.builder =
+                NodeParser.builder()
+                        //? if >= 26.1 {
+                        .serverPlaceholders()
+                        //?} else
+                        /*.globalPlaceholders()*/
+                        .placeholders(format, this.placeholders::get)
+                        .simplifiedTextFormat();
     }
 
     public static TextReplacer create() {
@@ -41,7 +47,10 @@ public class TextReplacer {
     }
 
     public Component apply(String text) {
-        return this.getParser().parseNode(text).toText();
+        //? if >= 26.1 {
+        return this.getParser().parseNode(text).toComponent();
+        //?} else
+        /*return this.getParser().parseNode(text).toText();*/
     }
 
     public TextNode applyNode(String text) {

@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.14-SNAPSHOT'
+    id 'net.fabricmc.fabric-loom' version '1.15-SNAPSHOT'
     id 'maven-publish'
     id 'com.gradleup.shadow' version "9+"
 }
@@ -83,13 +83,12 @@ shadowJar {
 
 dependencies {
     // To change the versions see the gradle.properties file
-    minecraft "com.mojang:minecraft:${stonecutter.current.version}"
-    mappings loom.officialMojangMappings()
-    modImplementation "net.fabricmc:fabric-loader:${property('loader_version')}"
-    include(modImplementation("me.lucko:fabric-permissions-api:${property('fabric_permissions_api_version')}"))
+    minecraft "com.mojang:minecraft:${property('minecraft_version')}"
+    implementation "net.fabricmc:fabric-loader:${property('loader_version')}"
+    include(implementation("me.lucko:fabric-permissions-api:${property('fabric_permissions_api_version')}"))
 
     // fabric api
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${property('fabric_version')}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${property('fabric_version')}"
     // productionRuntimeMods "net.fabricmc.fabric-api:fabric-api:${property('fabric_version')}"
 
     embed implementation("net.dv8tion:JDA:${property('jda_version')}") {
@@ -102,10 +101,10 @@ dependencies {
     // integrations
     compileOnly "net.luckperms:api:${property('luckperms_api_version')}"
     compileOnly "org.geysermc.floodgate:api:${property('floodgate_api_version')}"
-    modCompileOnly "maven.modrinth:vanish:${property('vanish_version')}"
+    compileOnly "maven.modrinth:vanish:${property('vanish_version')}"
 
     // placeholder-api
-    modImplementation "eu.pb4:placeholder-api:${property('placeholder_api_version')}"
+    implementation "eu.pb4:placeholder-api:${property('placeholder_api_version')}"
     productionRuntimeMods "eu.pb4:placeholder-api:${property('placeholder_api_version')}"
 }
 tasks.build.dependsOn(tasks.shadowJar)
@@ -200,13 +199,6 @@ jar {
     }
 }
 
-remapJar {
-    // wait until the shadowJar is done
-    dependsOn(shadowJar)
-    mustRunAfter(shadowJar)
-    // Set the input jar for the task. Here use the shadow Jar that include the .class of the transitive dependency
-    inputFile = file(shadowJar.archiveFile)
-}
 
 artifacts {
     archives tasks.shadowJar
