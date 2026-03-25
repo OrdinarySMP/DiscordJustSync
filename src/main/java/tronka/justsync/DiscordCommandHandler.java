@@ -166,7 +166,8 @@ public class DiscordCommandHandler extends ListenerAdapter {
             String altsList = String.join("`, `", alts);
             message.append("`").append(link.getPlayerName()).append("`: `").append(altsList).append("`\n");
         }
-        event.reply(message.toString()).setEphemeral(true).queue();
+        String finalMessage = message.isEmpty() ? "No alts linked" : message.toString();
+        event.reply(finalMessage).setEphemeral(true).queue();
     }
 
 	// run with checked permissions
