@@ -1,9 +1,9 @@
 package tronka.justsync;
 
-import com.mojang.logging.LogUtils;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import tronka.justsync.config.Config;
 import tronka.justsync.linking.PlayerData;
@@ -23,7 +23,7 @@ public class DiscordLogger {
         if (this.integration.getConfig().linking.logLinking) {
             this.channel = Utils.getTextChannel(this.integration.getJda(), config.linking.linkingLogChannel, "linkingLogChannel");
             if (this.channel == null) {
-                LogUtils.getLogger().error("invalid linkingLogChannel id");
+                JustSyncApplication.LOGGER.error("invalid linkingLogChannel id");
             }
         } else {
             this.channel = null;
@@ -36,7 +36,7 @@ public class DiscordLogger {
         }
         Optional<PlayerLink> optionalPlayerLink = this.integration.getLinkManager().getDataOf(uuid);
         if (optionalPlayerLink.isEmpty()) {
-            LogUtils.getLogger().error("playerlink of just linked player not found");
+            JustSyncApplication.LOGGER.error("playerlink of just linked player not found");
             return;
         }
         this.channel.sendMessage(
@@ -51,13 +51,13 @@ public class DiscordLogger {
         }
         Optional<PlayerLink> optionalPlayerLink = this.integration.getLinkManager().getDataOf(uuid);
         if (optionalPlayerLink.isEmpty()) {
-            LogUtils.getLogger().error("something went wrong, playerlink not found after linking");
+            JustSyncApplication.LOGGER.error("something went wrong, playerlink not found after linking");
             return;
         }
         Optional<PlayerData> alt = optionalPlayerLink.get().getAlts().stream()
             .filter(playerData -> playerData.getId() == uuid).findFirst();
         if (alt.isEmpty()) {
-            LogUtils.getLogger().error("alt that was just added not found in playerlink");
+            JustSyncApplication.LOGGER.error("alt that was just added not found in playerlink");
             return;
         }
         this.channel.sendMessage(
@@ -91,12 +91,11 @@ public class DiscordLogger {
         }
         Optional<PlayerLink> optionalPlayerLink = this.integration.getLinkManager().getDataOf(uuid);
         if (optionalPlayerLink.isEmpty()) {
-            LogUtils.getLogger().error("tried to unlink alt, but alt was not found");
+            JustSyncApplication.LOGGER.error("tried to unlink alt, but alt was not found");
             return;
         }
         this.channel.sendMessage(
             "Alt `" + Utils.getPlayerName(uuid) + "` was unlinked from user `" + optionalPlayerLink.get()
                 .getPlayerName() + "` aka <@" + optionalPlayerLink.get().getDiscordId() + ">").queue();
     }
-
 }
