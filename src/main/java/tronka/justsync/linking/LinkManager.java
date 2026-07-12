@@ -337,8 +337,8 @@ public class LinkManager {
 
     public void unlinkAlt(PlayerLink link, UUID altUuid) {
         this.tryKickPlayer(altUuid, this.integration.getConfig().kickMessages.kickUnlinked);
-        link.removeAlt(altUuid);
         this.integration.getDiscordLogger().onUnlinkAlt(altUuid);
+        link.removeAlt(altUuid);
         this.integration.getLuckPermsIntegration().removeAllSyncedRoles(altUuid);
         this.integration.getLuckPermsIntegration().unsetAlt(altUuid);
     }
