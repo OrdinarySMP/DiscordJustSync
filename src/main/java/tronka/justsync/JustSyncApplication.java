@@ -1,6 +1,5 @@
 package tronka.justsync;
 
-import com.mojang.logging.LogUtils;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +20,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import tronka.justsync.chat.ChatBridge;
 import tronka.justsync.chat.MinecraftToDiscordPreprocessor;
 import tronka.justsync.chat.RichPresenceUpdater;
@@ -34,7 +35,7 @@ import tronka.justsync.linking.LinkManager;
 public class JustSyncApplication extends ListenerAdapter implements DedicatedServerModInitializer {
 
     public static final String MOD_ID = "discord-justsync";
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LoggerFactory.getLogger("Disord JustSync");
     private static JustSyncApplication instance;
     private final List<Consumer<Config>> configReloadHandlers = new ArrayList<>();
     private JDA jda;
