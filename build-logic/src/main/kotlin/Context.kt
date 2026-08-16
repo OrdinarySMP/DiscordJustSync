@@ -1,7 +1,12 @@
 import dev.kikugie.stonecutter.StonecutterExperimentalAPI
 import dev.kikugie.stonecutter.build.StonecutterBuildExtension
+import kotlinx.serialization.json.Json
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 
 @OptIn(StonecutterExperimentalAPI::class)
 class Context(
@@ -56,7 +61,37 @@ class Context(
 	val basicVersion: String by lazy { "$baseVersion$snapshotSuffix" }
 
 	val publishAdditionalVersions: List<String> by lazy {
-		project.sc.properties.rawOrNull("publish", "additionalVersions")?.to<List<String>>().orEmpty()
+        val client = HttpClient.newBuilder().build()
+        val request = HttpRequest.newBuilder().uri(URI("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json")).build()
+        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+        val manifest = Json.decodeFromString(MCVersionManifest.serializer(), response.body())
+        val configuredVersions = stonecutter.versions.stream()
+                .filter { v -> v.project.endsWith(loader.id) }
+                .sorted { v1, v2 -> stonecutter.compare(v1.version, v2.version) }.toList()
+        val currentVersionIndex = configuredVersions.indexOf(stonecutter.current)
+        val nextConfiguredVersion =
+                if (currentVersionIndex == configuredVersions.lastIndex)
+                    manifest.latest.release
+                else configuredVersions[currentVersionIndex + 1].version
+
+        val additionalVersions: MutableList<String> = ArrayList()
+        var collect = false
+        for (version in manifest.versions) {
+            if (version.type != "release") {
+                continue
+            }
+
+            if (collect) {
+                additionalVersions.add(version.id)
+                if (version.id == currentMcVersion) {
+                    break
+                }
+            }
+            else if (version.id == nextConfiguredVersion) {
+                collect = true
+            }
+        }
+        additionalVersions
 	}
 
 	val javaVersion: JavaVersion by lazy {
