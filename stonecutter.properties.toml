@@ -40,8 +40,24 @@ deps.vanish = "1.5.13+1.21.5"
 
 [fabric."1.21.6"]
 deps.minecraft = "1.21.6"
-deps.fabric-api = "0.119.3+1.21.4"
-publish.additionalVersions = ["1.21.6"]
+deps.fabric-api = "0.128.2+1.21.6"
+deps.placeholder-api = "2.5.2+1.21.3"
+deps.farbic-permission-api = "0.4.0"
+deps.vanish = "1.5.13+1.21.5"
+
+[fabric."1.21.9"]
+deps.minecraft = "1.21.9"
+deps.fabric-api = "0.133.14+1.21.9"
+deps.placeholder-api = "2.8.0+1.21.9"
+deps.farbic-permission-api = "0.5.0"
+deps.vanish = "1.6.1+1.21.9-rc1"
+
+[fabric."1.21.11"]
+deps.minecraft = "1.21.11"
+deps.fabric-api = "0.139.4+1.21.11"
+deps.placeholder-api = "2.8.1+1.21.10"
+deps.farbic-permission-api = "0.6.0"
+deps.vanish = "1.6.2+1.21.11-rc2"
 
 [fabric."26.1"]
 deps.minecraft = "26.1"
@@ -49,21 +65,15 @@ deps.fabric-api = "0.144.0+26.1"
 deps.placeholder-api = "3.0.0-beta.2+26.1"
 deps.farbic-permission-api = "0.7.0"
 deps.vanish = "1.6.6+26.1"
-publish.additionalVersions = ["26.1.1", "26.1.2"]
 
 [neoforge]
 
-[neoforge."1.21.1"]
-deps.minecraft = "1.21.1"
-deps.neoforge = "21.1.213"
-
-[neoforge."1.21.7"]
-deps.minecraft = "1.21.7"
-deps.neoforge = "21.7.1-beta"
-publish.additionalVersions = ["1.21.6"]
+[neoforge."1.21.11"]
+deps.minecraft = "1.21.11"
+deps.neoforge = "21.11.45"
+deps.placeholder-api = "2.9.0+1.21.11+neoforge"
 
 [neoforge."26.1"]
 deps.minecraft = "26.1.2"
 deps.neoforge = "26.1.2.29-beta"
 deps.placeholder-api = "3.0.0+26.1+neoforge"
-publish.additionalVersions = ["26.1.1", "26.1.2"]
