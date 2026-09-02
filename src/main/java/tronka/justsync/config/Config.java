@@ -1,9 +1,9 @@
 package tronka.justsync.config;
 
-import com.moandjiezana.toml.Toml;
-import com.moandjiezana.toml.comments.TomlComment;
-import com.moandjiezana.toml.comments.TomlMapComment;
-import com.moandjiezana.toml.TomlWriter;
+import de.tronka.toml.Toml;
+import de.tronka.toml.comments.TomlComment;
+import de.tronka.toml.comments.TomlMapComment;
+import de.tronka.toml.TomlWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;

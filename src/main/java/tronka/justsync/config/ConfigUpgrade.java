@@ -1,6 +1,6 @@
 package tronka.justsync.config;
 
-import com.moandjiezana.toml.Toml;
+import de.tronka.toml.Toml;
 import tronka.justsync.config.Config.MessageStrings;
 import tronka.justsync.events.payload.MessageType;
 import java.util.Map.Entry;
