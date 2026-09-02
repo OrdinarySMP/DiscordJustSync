@@ -1,7 +1,7 @@
 package tronka.justsync.config;
 
-import com.moandjiezana.toml.comments.TomlComment;
-import com.moandjiezana.toml.comments.TomlNullComment;
+import de.tronka.toml.comments.TomlComment;
+import de.tronka.toml.comments.TomlNullComment;
 
 public class MessageFormat {
     @TomlComment("The way the message is sent, look at the beginning of this section for more info")
