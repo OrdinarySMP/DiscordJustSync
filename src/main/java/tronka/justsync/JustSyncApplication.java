@@ -18,6 +18,8 @@ import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
+import okhttp3.OkHttpClient;
+
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,6 +99,9 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
 
     private void onServerStopped(MinecraftServer server) {
         this.jda.shutdownNow();
+        OkHttpClient client = this.jda.getHttpClient();
+        client.connectionPool().evictAll();
+        client.dispatcher().executorService().shutdown();
     }
 
     @Override
